@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card certificate">
+    <h2>Sertifikat Webinar</h2>
+    <p>Nomor: <strong>{{ participant.certificate.certificate_number }}</strong></p>
+    <p>Diberikan kepada</p>
+    <h3>{{ participant.name }}</h3>
+    <p>atas partisipasi dalam webinar Interoperabilitas.</p>
+    <p>Tanggal: {{ participant.certificate.issued_at.strftime('%d %B %Y') }}</p>
+    <button onclick="window.print()">Cetak / PDF</button>
+  </div>
+{% endblock %}

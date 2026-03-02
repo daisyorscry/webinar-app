@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 max-w-2xl">
+    <h2 class="text-2xl font-semibold mb-4">{{ 'Edit Event' if event else 'Buat Event Baru' }}</h2>
+    <form method="post" class="space-y-4">
+      <div>
+        <label class="text-xs text-slate-600">Judul</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="title" value="{{ event.title if event else '' }}" required />
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Deskripsi</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="description">{{ event.description if event else '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Objectives (apa yang dipelajari)</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="objectives" placeholder="Pisahkan per baris">{{ event.objectives if event else '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Materials (materi)</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="materials" placeholder="Pisahkan per baris">{{ event.materials if event else '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Benefits</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="benefits" placeholder="Pisahkan per baris">{{ event.benefits if event else '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Requirements (prasyarat)</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="requirements" placeholder="Pisahkan per baris">{{ event.requirements if event else '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Agenda</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="agenda" placeholder="Pisahkan per baris">{{ event.agenda if event else '' }}</textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Mentor</label>
+        <select class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="mentor_id" required>
+          {% for mentor in mentors %}
+            <option value="{{ mentor.id }}" {% if event and event.mentor_id == mentor.id %}selected{% endif %}>{{ mentor.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="text-xs text-slate-600">Kuota</label>
+          <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="number" name="quota" min="1" value="{{ event.quota if event else '' }}" required />
+        </div>
+        <div>
+          <label class="text-xs text-slate-600">Durasi (menit)</label>
+          <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="number" name="duration_minutes" min="1" value="{{ event.duration_minutes if event else '' }}" required />
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Mulai (ISO)</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="datetime-local" name="start_at" value="{{ event.start_at.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Selesai (ISO)</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="datetime-local" name="end_at" value="{{ event.end_at.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Batas Registrasi (ISO)</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="datetime-local" name="registration_deadline" value="{{ event.registration_deadline.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
+      </div>
+      <button class="bg-teal-500 hover:bg-teal-400 text-slate-900 font-semibold rounded-lg px-4 py-2" type="submit">{{ 'Update Event' if event else 'Simpan' }}</button>
+    </form>
+  </div>
+{% endblock %}

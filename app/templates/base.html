@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Itts Community" }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    {% block extra_head %}{% endblock %}
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen" style="font-family: 'Space Grotesk', sans-serif;">
+    {% set is_participant = session.get('participant_id') %}
+    {% set is_admin = session.get('admin_id') %}
+    {% set show_sidebar = (is_participant or is_admin) and request.endpoint not in ['main.home'] %}
+    <div class="min-h-screen px-6 py-12">
+      <div class="{% if show_sidebar %}grid gap-0 lg:grid-cols-[220px,1fr] items-start max-w-6xl mx-auto{% else %}max-w-6xl mx-auto{% endif %}">
+        {% if show_sidebar %}
+          <aside class="px-5 py-6 space-y-6 border-r border-slate-200">
+            <div>
+              <h1 class="text-xl font-semibold">Webinar ITTS</h1>
+              <p class="text-[11px] text-slate-500 mt-1">{% if is_admin %}Admin Workspace{% else %}User Workspace{% endif %}</p>
+            </div>
+            <nav class="flex flex-col gap-2 text-base">
+              {% if is_participant %}
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.user_dashboard' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.user_dashboard') }}">
+                  <i class="fa-solid fa-chart-line text-sm {% if request.endpoint == 'main.user_dashboard' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Dashboard
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.user_profile' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.user_profile') }}">
+                  <i class="fa-regular fa-user text-sm {% if request.endpoint == 'main.user_profile' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Profile
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.user_events' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.user_events') }}">
+                  <i class="fa-regular fa-calendar text-sm {% if request.endpoint == 'main.user_events' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Events
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100" href="{{ url_for('main.user_logout') }}">
+                  <i class="fa-solid fa-arrow-right-from-bracket text-sm text-slate-400"></i>
+                  Logout
+                </a>
+              {% elif is_admin %}
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.admin_dashboard' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.admin_dashboard') }}">
+                  <i class="fa-solid fa-chart-simple text-sm {% if request.endpoint == 'main.admin_dashboard' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Dashboard
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.admin_events' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.admin_events') }}">
+                  <i class="fa-regular fa-calendar-days text-sm {% if request.endpoint == 'main.admin_events' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Events
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100" href="{{ url_for('main.admin_logout') }}">
+                  <i class="fa-solid fa-right-from-bracket text-sm text-slate-400"></i>
+                  Logout
+                </a>
+              {% endif %}
+            </nav>
+          </aside>
+        {% endif %}
+        <main class="{% if show_sidebar %}px-6{% else %}px-2{% endif %}">
+      {% if request.endpoint not in ['main.user_login', 'main.user_register'] %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="space-y-3 mb-6">
+              {% for category, message in messages %}
+                <div class="px-4 py-3 rounded-lg border text-sm {% if category == 'error' %}border-red-300 bg-red-50 text-red-700{% else %}border-emerald-300 bg-emerald-50 text-emerald-700{% endif %}">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+      {% endif %}
+      {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+    <script src="{{ url_for('static', filename='forms.js') }}"></script>
+  </body>
+</html>

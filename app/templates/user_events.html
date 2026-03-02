@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-5xl mx-auto space-y-6">
+    <section class="pb-4 border-b border-slate-200">
+      <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Events</p>
+      <h2 class="text-2xl font-semibold mt-1">Jelajahi Event</h2>
+      <p class="text-sm text-slate-600">Daftar event aktif, mendatang, dan yang sudah selesai dalam satu halaman.</p>
+    </section>
+
+    <section class="space-y-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Event Tersedia</h3>
+        <span class="text-xs text-slate-500">Realtime</span>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {% for event in active_events %}
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs uppercase tracking-wider text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">Sedang Berlangsung</span>
+              <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-lg font-semibold">{{ event.title }}</h4>
+              <p class="text-sm text-slate-600">{{ event.description or 'Webinar live dengan mentor terbaik.' }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <img class="w-10 h-10 rounded-full object-cover border border-slate-200" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
+              <div>
+                <p class="text-xs text-slate-500">Mentor</p>
+                <p class="text-sm font-medium">{{ event.mentor.name }}</p>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500">Mulai: {{ event.start_at.strftime('%d %b %Y %H:%M') }}</p>
+            <a class="text-sm text-teal-700" href="{{ url_for('main.event_detail', event_id=event.id) }}">Detail event</a>
+          </div>
+        {% endfor %}
+
+        {% for event in upcoming_events %}
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs uppercase tracking-wider text-sky-600 bg-sky-50 border border-sky-200 rounded-full px-3 py-1">Akan Datang</span>
+              <span class="h-2.5 w-2.5 rounded-full bg-sky-500"></span>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-lg font-semibold">{{ event.title }}</h4>
+              <p class="text-sm text-slate-600">{{ event.description or 'Webinar dengan mentor pilihan.' }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <img class="w-10 h-10 rounded-full object-cover border border-slate-200" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
+              <div>
+                <p class="text-xs text-slate-500">Mentor</p>
+                <p class="text-sm font-medium">{{ event.mentor.name }}</p>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500">Mulai: {{ event.start_at.strftime('%d %b %Y %H:%M') }}</p>
+            <a class="text-sm text-teal-700" href="{{ url_for('main.event_detail', event_id=event.id) }}">Detail event</a>
+          </div>
+        {% endfor %}
+
+        {% for event in past_events %}
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs uppercase tracking-wider text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">Selesai</span>
+              <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-lg font-semibold">{{ event.title }}</h4>
+              <p class="text-sm text-slate-600">{{ event.description or 'Event sudah selesai.' }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <img class="w-10 h-10 rounded-full object-cover border border-slate-200" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
+              <div>
+                <p class="text-xs text-slate-500">Mentor</p>
+                <p class="text-sm font-medium">{{ event.mentor.name }}</p>
+              </div>
+            </div>
+            <p class="text-xs text-slate-500">Selesai: {{ event.end_at.strftime('%d %b %Y %H:%M') }}</p>
+            <a class="text-sm text-teal-700" href="{{ url_for('main.event_detail', event_id=event.id) }}">Lihat detail</a>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

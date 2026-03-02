@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+  {{ super() }}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock %}
+{% block content %}
+  <div class="space-y-6">
+    <section class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Events</p>
+        <h2 class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Data Event</h2>
+        <p class="mt-2 text-sm text-slate-600">Kelola jadwal, kuota, dan aktivitas event dari satu halaman.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_dashboard') }}">
+          <i class="fa-solid fa-chart-simple"></i>
+          Dashboard
+        </a>
+        <a class="inline-flex items-center gap-2 rounded-2xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-600" href="{{ url_for('main.admin_create_event') }}">
+          <i class="fa-solid fa-plus"></i>
+          Buat Event
+        </a>
+      </div>
+    </section>
+
+    <section class="py-1">
+      <div class="mb-4 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+        {% if filters.q or filters.start_from or filters.start_to %}
+          <div class="flex flex-wrap gap-2">
+            {% if filters.q %}
+              <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                {{ filters.q }}
+              </span>
+            {% endif %}
+            {% if filters.start_from or filters.start_to %}
+              <span class="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
+                <i class="fa-regular fa-calendar"></i>
+                {{ filters.start_from or '...' }} - {{ filters.start_to or '...' }}
+              </span>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+      <form method="get" id="eventFilterForm" class="space-y-4">
+        <input type="hidden" name="start_from" id="startFromInput" value="{{ filters.start_from }}" />
+        <input type="hidden" name="start_to" id="startToInput" value="{{ filters.start_to }}" />
+        <div class="grid gap-4">
+          <label class="flex h-11 items-center gap-3 rounded-2xl border border-slate-200 px-4 transition hover:border-slate-300">
+            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+            <input
+              id="eventSearchInput"
+              class="h-full w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              type="text"
+              name="q"
+              value="{{ filters.q }}"
+              placeholder="Cari judul event, mentor, deskripsi, atau invitation code"
+            />
+            <button
+              id="clearSearchButton"
+              class="{% if not filters.q %}hidden {% endif %}inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+              type="button"
+              aria-label="Hapus pencarian"
+              title="Hapus pencarian"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <section class="overflow-hidden">
+      <div class="flex flex-col gap-3 border-b border-slate-200 px-3 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">Daftar Event</h3>
+          <p class="text-sm text-slate-500">{{ events|length }} data ditemukan.</p>
+        </div>
+        <div class="relative flex items-center self-start lg:self-center">
+          <input type="text" id="dateRangePicker" class="hidden" />
+          <button
+            id="dateRangeToggle"
+            class="relative inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            type="button"
+            aria-label="Buka filter tanggal"
+            title="Filter tanggal"
+          >
+            <i class="fa-regular fa-calendar text-base"></i>
+            {% if filters.start_from or filters.start_to %}
+              <span class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-slate-900"></span>
+            {% endif %}
+          </button>
+
+          <div id="dateRangePanel" class="absolute right-0 top-full z-30 mt-2 hidden w-[min(92vw,44rem)] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl lg:w-[44rem]">
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold text-slate-600">Pilih tanggal mulai dan selesai</p>
+                <p id="dateRangeLabel" class="mt-1 text-sm font-semibold text-slate-900">
+                  {% if filters.start_from and filters.start_to %}
+                    {{ filters.start_from }} - {{ filters.start_to }}
+                  {% else %}
+                    Belum ada rentang dipilih
+                  {% endif %}
+                </p>
+              </div>
+              <button
+                id="clearDateRange"
+                class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                type="button"
+              >
+                <i class="fa-solid fa-xmark"></i>
+                Clear
+              </button>
+            </div>
+            <div id="calendarInline" class="min-h-[20rem] overflow-x-auto rounded-2xl p-2 [&_.flatpickr-calendar]:!shadow-none [&_.flatpickr-calendar]:!border-0 [&_.flatpickr-calendar]:!bg-transparent [&_.flatpickr-day]:rounded-xl [&_.flatpickr-day.selected]:!bg-slate-900 [&_.flatpickr-day.selected]:!border-slate-900 [&_.flatpickr-day.selected]:!text-white [&_.flatpickr-day.startRange]:!bg-slate-900 [&_.flatpickr-day.startRange]:!border-slate-900 [&_.flatpickr-day.startRange]:!text-white [&_.flatpickr-day.endRange]:!bg-slate-900 [&_.flatpickr-day.endRange]:!border-slate-900 [&_.flatpickr-day.endRange]:!text-white [&_.flatpickr-day.inRange]:!bg-slate-200 [&_.flatpickr-day.inRange]:!border-slate-200 [&_.flatpickr-day.today]:!border-slate-500"></div>
+          </div>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-slate-600">
+            <tr>
+              <th class="px-3 py-4 text-left font-semibold sm:px-5">Event</th>
+              <th class="px-3 py-4 text-left font-semibold sm:px-5">Mentor</th>
+              <th class="px-3 py-4 text-left font-semibold sm:px-5">Jadwal</th>
+              <th class="px-3 py-4 text-left font-semibold sm:px-5">Kuota</th>
+              <th class="px-3 py-4 text-left font-semibold sm:px-5">Status</th>
+              <th class="px-3 py-4 text-center font-semibold sm:px-5">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for event in events %}
+              {% set total_registered = event.registrations|length %}
+              {% set status = 'active' if event.start_at <= now and event.end_at >= now else 'upcoming' if event.start_at > now else 'done' %}
+              {% set remaining_quota = event.quota - total_registered if event.quota - total_registered > 0 else 0 %}
+              {% set fill_percent = ((total_registered / event.quota) * 100) if event.quota else 0 %}
+              <tr class="align-top">
+                <td class="px-3 py-4 sm:px-5">
+                  <div class="space-y-2">
+                    <p class="font-semibold text-slate-900">{{ event.title }}</p>
+                    <p class="max-w-sm text-xs leading-5 text-slate-500">{{ event.description or 'Belum ada deskripsi event.' }}</p>
+                    <div class="flex flex-wrap gap-2">
+                      <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        INV {{ event.invitation_code }}
+                      </span>
+                      <span class="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                        {{ event.duration_minutes }} menit
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-3 py-4 sm:px-5">
+                  <div class="flex items-center gap-3">
+                    <img class="h-10 w-10 rounded-2xl border border-slate-200 object-cover" src="{{ event.mentor.photo_url or 'https://placehold.co/80x80' }}" alt="{{ event.mentor.name }}" />
+                    <div>
+                      <p class="font-semibold text-slate-900">{{ event.mentor.name }}</p>
+                      <p class="text-xs text-slate-500">Mentor event</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-3 py-4 sm:px-5">
+                  <div class="space-y-1.5 text-slate-700">
+                    <p class="font-medium">{{ event.start_at.strftime('%d %b %Y %H:%M') }}</p>
+                    <p class="text-xs text-slate-500">Selesai {{ event.end_at.strftime('%d %b %Y %H:%M') }}</p>
+                    <p class="text-xs text-slate-500">Tutup daftar {{ event.registration_deadline.strftime('%d %b %Y %H:%M') }}</p>
+                  </div>
+                </td>
+                <td class="px-3 py-4 sm:px-5">
+                  <div class="space-y-2 text-slate-700">
+                    <div class="flex items-center justify-between gap-3 text-xs font-semibold">
+                      <span>{{ total_registered }} / {{ event.quota }}</span>
+                      <span class="text-slate-500">Sisa {{ remaining_quota }}</span>
+                    </div>
+                    <div class="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div class="h-full rounded-full bg-teal-600" style="width: {{ fill_percent if fill_percent <= 100 else 100 }}%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-3 py-4 sm:px-5">
+                  {% if status == 'active' %}
+                    <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Sedang berlangsung</span>
+                  {% elif status == 'upcoming' %}
+                    <span class="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">Akan datang</span>
+                  {% else %}
+                    <span class="inline-flex rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Selesai</span>
+                  {% endif %}
+                </td>
+                <td class="px-3 py-4 text-center sm:px-5">
+                  <details class="relative inline-block text-left">
+                    <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-2xl border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:text-slate-900">
+                      <i class="fa-solid fa-ellipsis-vertical"></i>
+                    </summary>
+                    <div class="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+                      <a class="flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50" href="{{ url_for('main.admin_edit_event', event_id=event.id) }}">
+                        <i class="fa-regular fa-pen-to-square w-4"></i>
+                        Edit
+                      </a>
+                      <form method="post" action="{{ url_for('main.admin_generate_meet', event_id=event.id) }}">
+                        <button class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50" type="submit">
+                          <i class="fa-solid fa-video w-4"></i>
+                          Generate Meet
+                        </button>
+                      </form>
+                      {% if event.meet_link %}
+                        <a class="flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50" href="{{ event.meet_link }}" target="_blank" rel="noopener">
+                          <i class="fa-solid fa-arrow-up-right-from-square w-4"></i>
+                          Go to Meet
+                        </a>
+                      {% endif %}
+                      <a class="flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50" href="{{ url_for('main.admin_event_registrations', event_id=event.id) }}">
+                        <i class="fa-regular fa-address-book w-4"></i>
+                        List Peserta
+                      </a>
+                      <form method="post" action="{{ url_for('main.admin_delete_event', event_id=event.id) }}" onsubmit="return confirm('Hapus event ini?');">
+                        <button class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50" type="submit">
+                          <i class="fa-regular fa-trash-can w-4"></i>
+                          Delete
+                        </button>
+                      </form>
+                    </div>
+                  </details>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td class="px-3 py-10 text-center sm:px-5" colspan="6">
+                  <div class="space-y-2">
+                    <p class="text-base font-semibold text-slate-700">Belum ada event.</p>
+                    <p class="text-sm text-slate-500">Coba ubah filter atau buat event baru dari tombol di atas.</p>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const filterForm = document.getElementById("eventFilterForm");
+      const searchInput = document.getElementById("eventSearchInput");
+      const clearSearchButton = document.getElementById("clearSearchButton");
+      const pickerInput = document.getElementById("dateRangePicker");
+      const calendarInline = document.getElementById("calendarInline");
+      const startFromInput = document.getElementById("startFromInput");
+      const startToInput = document.getElementById("startToInput");
+      const dateRangeLabel = document.getElementById("dateRangeLabel");
+      const clearButton = document.getElementById("clearDateRange");
+      const toggleButton = document.getElementById("dateRangeToggle");
+      const panel = document.getElementById("dateRangePanel");
+
+      if (!filterForm || !searchInput || !clearSearchButton || !pickerInput || !calendarInline || !window.flatpickr || !toggleButton || !panel) return;
+
+      let searchTimer;
+
+      const defaultDates = [];
+      if (startFromInput.value) defaultDates.push(startFromInput.value);
+      if (startToInput.value) defaultDates.push(startToInput.value);
+
+      const formatLabel = function (dates) {
+        if (!dates || !dates.length) {
+          dateRangeLabel.textContent = "Belum ada rentang dipilih";
+          return;
+        }
+
+        const formatted = dates.map((date) =>
+          date.toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        );
+
+        dateRangeLabel.textContent = formatted.length === 2 ? formatted.join(" - ") : formatted[0];
+      };
+
+      const picker = flatpickr(pickerInput, {
+        mode: "range",
+        inline: true,
+        appendTo: calendarInline,
+        dateFormat: "Y-m-d",
+        defaultDate: defaultDates,
+        monthSelectorType: "static",
+        showMonths: window.innerWidth >= 1024 ? 2 : 1,
+        onReady: function (_, __, instance) {
+          formatLabel(instance.selectedDates);
+        },
+        onChange: function (selectedDates, dateStr, instance) {
+          const values = dateStr ? dateStr.split(" to ") : [];
+          startFromInput.value = values[0] || "";
+          startToInput.value = values[1] || "";
+          formatLabel(instance.selectedDates);
+          if (values.length === 2) {
+            panel.classList.add("hidden");
+            filterForm.requestSubmit();
+          }
+        },
+      });
+
+      const togglePanel = function () {
+        panel.classList.toggle("hidden");
+        if (!panel.classList.contains("hidden")) {
+          picker.set("showMonths", window.innerWidth >= 1024 ? 2 : 1);
+          picker.redraw();
+        }
+      };
+
+      toggleButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        togglePanel();
+      });
+
+      panel.addEventListener("click", function (event) {
+        event.stopPropagation();
+      });
+
+      clearButton.addEventListener("click", function () {
+        picker.clear();
+        startFromInput.value = "";
+        startToInput.value = "";
+        formatLabel([]);
+        filterForm.requestSubmit();
+      });
+
+      searchInput.addEventListener("input", function () {
+        clearSearchButton.classList.toggle("hidden", !searchInput.value);
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(function () {
+          filterForm.requestSubmit();
+        }, 350);
+      });
+
+      clearSearchButton.addEventListener("click", function () {
+        window.clearTimeout(searchTimer);
+        searchInput.value = "";
+        clearSearchButton.classList.add("hidden");
+        filterForm.requestSubmit();
+      });
+
+      document.addEventListener("click", function () {
+        if (!panel.classList.contains("hidden")) {
+          panel.classList.add("hidden");
+        }
+      });
+    });
+  </script>
+{% endblock %}

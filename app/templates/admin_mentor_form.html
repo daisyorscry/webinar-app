@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 max-w-2xl">
+    <h2 class="text-2xl font-semibold mb-4">Tambah Mentor</h2>
+    <form method="post" class="space-y-4">
+      <div>
+        <label class="text-xs text-slate-600">Nama</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="name" required />
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Bio</label>
+        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="bio"></textarea>
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Foto URL</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="photo_url" />
+      </div>
+      <button class="bg-teal-500 hover:bg-teal-400 text-slate-900 font-semibold rounded-lg px-4 py-2" type="submit">Simpan</button>
+    </form>
+  </div>
+{% endblock %}

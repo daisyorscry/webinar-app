@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+{% endblock %}
+{% block content %}
+  <div class="max-w-4xl mx-auto space-y-6">
+    <section class="border-b border-slate-200 pb-4">
+      <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Profile</p>
+      <h2 class="text-2xl font-semibold mt-1">Profil Peserta</h2>
+      <p class="text-sm text-slate-600">Lengkapi profil agar bisa daftar event.</p>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-[1fr,1.2fr]">
+      <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-5">
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            {% set avatar_src = participant.profile_photo_path or participant.avatar_url or 'uploads/default-avatar.svg' %}
+            <img class="w-24 h-24 rounded-full object-cover border border-slate-200" src="{{ avatar_src if avatar_src.startswith('http') else url_for('static', filename=avatar_src) }}" alt="Profile" onerror="this.src='{{ url_for('static', filename='uploads/default-avatar.svg') }}'" />
+            <button id="openCamera" class="absolute -bottom-2 -right-2 w-9 h-9 rounded-full bg-teal-700 hover:bg-teal-600 text-white flex items-center justify-center" aria-label="Update photo">
+              <i class="fa-solid fa-camera"></i>
+            </button>
+          </div>
+          <div>
+            <p class="text-base font-semibold">{{ participant.name }}</p>
+            <p class="text-sm text-slate-600">{{ participant.email }}</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+          <p class="text-xs uppercase tracking-wider text-slate-500">Status</p>
+          <div class="mt-2 text-sm text-slate-700 space-y-1">
+            <p>Email: <span class="font-semibold">{{ 'Terverifikasi' if participant.email_verified else 'Belum terverifikasi' }}</span></p>
+            <p>Foto profil: <span class="font-semibold">{{ 'Sudah diupload' if participant.profile_photo_path else 'Belum ada' }}</span></p>
+          </div>
+        </div>
+
+        <form id="avatarForm" method="post" action="{{ url_for('main.user_profile_photo') }}" enctype="multipart/form-data"></form>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+        <h3 class="text-lg font-semibold">Verifikasi Email</h3>
+        <p class="text-sm text-slate-600">Email terverifikasi dibutuhkan untuk ikut event. Klik link verifikasi yang muncul di bawah.</p>
+        {% if not participant.email_verified and participant.email_verification_token %}
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600">
+            Link verifikasi (demo):
+            <a class="text-teal-600 break-all" href="{{ url_for('main.user_verify_email', token=participant.email_verification_token, _external=true) }}">{{ url_for('main.user_verify_email', token=participant.email_verification_token, _external=true) }}</a>
+          </div>
+        {% else %}
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-700">
+            Email sudah terverifikasi. Kamu bisa daftar event.
+          </div>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+
+  <div id="cameraModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 flex">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Ambil Foto Profil</h3>
+        <button id="closeCamera" class="text-slate-500 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <video id="cameraStream" class="w-full rounded-xl bg-slate-100" autoplay playsinline></video>
+      <div class="flex gap-2">
+        <button id="startCamera" class="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg px-3 py-2">Buka Kamera</button>
+        <button id="captureFrame" class="bg-teal-700 hover:bg-teal-600 text-white rounded-lg px-3 py-2">Ambil Foto</button>
+      </div>
+    </div>
+    <canvas id="captureCanvas" class="hidden"></canvas>
+  </div>
+
+  <div id="cropModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 flex">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Crop Foto</h3>
+        <button id="closeCrop" class="text-slate-500 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <img id="cropPreview" class="w-full rounded-xl bg-slate-100" alt="Preview" />
+      <button id="saveAvatar" class="w-full bg-teal-700 hover:bg-teal-600 text-white rounded-lg px-3 py-2">Simpan Foto</button>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='profile.js') }}"></script>
+{% endblock %}

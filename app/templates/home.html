@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% include '_header.html' %}
+
+  <section class="mt-10 grid gap-8 lg:grid-cols-[1.2fr,1fr] items-center">
+    <div class="space-y-6">
+      <p class="text-xs uppercase tracking-[0.35em] text-teal-600">Belajar bareng komunitas ITTS</p>
+      <h3 class="text-4xl lg:text-5xl font-semibold leading-tight">Upgrade skill kamu lewat webinar yang relevan & praktis.</h3>
+      <p class="text-slate-700 text-lg">Mulai dari teknologi, karier, hingga personal branding. Semua event bisa diikuti gratis atau berbayar, lengkap dengan sertifikat digital.</p>
+      <div class="flex flex-wrap gap-3">
+        <a class="bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg px-5 py-2" href="{{ url_for('main.user_register') }}">Daftar</a>
+      </div>
+      <div class="hidden"></div>
+    </div>
+    <div class="flex items-center justify-center">
+      <lottie-player src="https://raw.githubusercontent.com/daisyorscry/itts/main/fe-itts-community/public/Robot-Bot%203D.json" background="transparent" speed="1" style="width: 100%; max-width: 420px; height: 320px;" loop autoplay></lottie-player>
+    </div>
+  </section>
+
+  <section id="events" class="mt-14 space-y-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-2xl font-semibold">Jadwal Event</h3>
+      <span class="text-xs text-slate-500">Status real-time</span>
+    </div>
+    <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      {% for event in active_events %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wider text-emerald-600 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1">Sedang Berlangsung</span>
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          </div>
+          <h4 class="text-xl font-semibold">{{ event.title }}</h4>
+          <p class="text-sm text-slate-600">{{ event.description or 'Webinar live dengan mentor terbaik.' }}</p>
+          <div class="flex items-center gap-3">
+            <img class="w-10 h-10 rounded-full object-cover" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
+            <div>
+              <p class="text-xs text-slate-600">Mentor</p>
+              <p class="font-medium">{{ event.mentor.name }}</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">Mulai: {{ event.start_at.strftime('%d %b %Y %H:%M') }}</p>
+          <a class="text-sm text-teal-600" href="{{ url_for('main.event_detail', event_id=event.id) }}">Detail event</a>
+        </div>
+      {% endfor %}
+
+      {% for event in upcoming_events %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wider text-sky-600 bg-sky-500/10 border border-sky-500/30 rounded-full px-3 py-1">Akan Datang</span>
+            <span class="h-2.5 w-2.5 rounded-full bg-sky-400"></span>
+          </div>
+          <h4 class="text-xl font-semibold">{{ event.title }}</h4>
+          <p class="text-sm text-slate-600">{{ event.description or 'Webinar dengan mentor pilihan.' }}</p>
+          <div class="flex items-center gap-3">
+            <img class="w-10 h-10 rounded-full object-cover" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
+            <div>
+              <p class="text-xs text-slate-600">Mentor</p>
+              <p class="font-medium">{{ event.mentor.name }}</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">Mulai: {{ event.start_at.strftime('%d %b %Y %H:%M') }}</p>
+          <a class="text-sm text-teal-600" href="{{ url_for('main.event_detail', event_id=event.id) }}">Detail event</a>
+        </div>
+      {% endfor %}
+
+      {% for event in past_events %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 opacity-75">
+          <div class="flex items-center justify-between">
+            <span class="text-xs uppercase tracking-wider text-slate-700 bg-slate-500/10 border border-slate-500/30 rounded-full px-3 py-1">Selesai</span>
+            <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+          </div>
+          <h4 class="text-xl font-semibold">{{ event.title }}</h4>
+          <p class="text-sm text-slate-600">{{ event.description or 'Event sudah selesai.' }}</p>
+          <div class="flex items-center gap-3">
+            <img class="w-10 h-10 rounded-full object-cover" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
+            <div>
+              <p class="text-xs text-slate-600">Mentor</p>
+              <p class="font-medium">{{ event.mentor.name }}</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">Selesai: {{ event.end_at.strftime('%d %b %Y %H:%M') }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section id="mentors" class="hidden"></section>
+
+  {% include '_footer.html' %}
+{% endblock %}

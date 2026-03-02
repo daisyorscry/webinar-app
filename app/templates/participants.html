@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card">
+    <h2>Data Peserta</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID Peserta</th>
+          <th>Nama</th>
+          <th>Email</th>
+          <th>Kehadiran</th>
+          <th>Kelulusan</th>
+          <th>Sertifikat</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in participants %}
+        <tr>
+          <td>{{ p.participant_id }}</td>
+          <td>{{ p.name }}</td>
+          <td>{{ p.email }}</td>
+          <td>{{ p.attendance_status }}</td>
+          <td>
+            {% if p.graduation_status and p.graduation_status.passed %}
+              <span class="badge success">Lulus</span>
+            {% else %}
+              <span class="badge danger">Tidak</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if p.certificate %}
+              <a class="button" href="{{ url_for('main.certificate', participant_id=p.id) }}">Cetak</a>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

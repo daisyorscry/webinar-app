@@ -1,0 +1,149 @@
+:root {
+  --bg: #f7f4ef;
+  --card: #ffffff;
+  --ink: #1f2937;
+  --muted: #6b7280;
+  --accent: #1d4ed8;
+  --accent-dark: #1e3a8a;
+  --danger: #b91c1c;
+  --success: #15803d;
+  --border: #e5e7eb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  color: var(--ink);
+  background: radial-gradient(circle at top, #fff7e6 0%, var(--bg) 45%, #f1efe9 100%);
+}
+
+header {
+  background: #111827;
+  color: #fff;
+  padding: 20px 24px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+nav a {
+  color: #e5e7eb;
+  margin-right: 16px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 28px auto;
+  padding: 0 20px 48px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+h2 {
+  margin-top: 0;
+  font-size: 20px;
+}
+
+form {
+  display: grid;
+  gap: 16px;
+}
+
+label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+input, select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 15px;
+}
+
+button, .button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button:hover, .button:hover {
+  background: var(--accent-dark);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.badge.success { background: #dcfce7; color: var(--success); }
+.badge.danger { background: #fee2e2; color: var(--danger); }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th, .table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.flash {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.flash.error {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.footer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 32px;
+}
+
+.certificate {
+  border: 10px solid #f3e8d1;
+  padding: 32px;
+  text-align: center;
+  background: #fffaf0;
+}
+
+.certificate h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.certificate p {
+  margin: 6px 0;
+}

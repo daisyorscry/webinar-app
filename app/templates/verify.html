@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card">
+    <h2>Form Verifikasi Peserta</h2>
+    <form method="post">
+      <div>
+        <label for="identifier_type">Pilih metode</label>
+        <select id="identifier_type" name="identifier_type" required>
+          <option value="email">Email</option>
+          <option value="participant_id">ID Peserta</option>
+        </select>
+      </div>
+      <div>
+        <label for="identifier_value">Masukkan Email / ID</label>
+        <input id="identifier_value" name="identifier_value" placeholder="contoh: user@email.com" required />
+      </div>
+      <button type="submit">Cek Kehadiran</button>
+    </form>
+  </div>
+{% endblock %}

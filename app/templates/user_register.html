@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="space-y-10">
+    {% include '_header.html' %}
+
+    <section class="grid gap-8 lg:grid-cols-[1.1fr,1fr] items-center">
+      <div class="space-y-4">
+        <p class="text-xs uppercase tracking-[0.35em] text-teal-600">Mulai Sekarang</p>
+        <h2 class="text-4xl font-semibold leading-tight">Daftar untuk akses webinar, materi, dan sertifikat.</h2>
+        <p class="text-slate-700">Buat akun peserta untuk mengikuti event, mengelola referral, dan melihat link webinar.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-7">
+        <h3 class="text-2xl font-semibold mb-4">Registrasi Peserta</h3>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="space-y-2 mb-4">
+              {% for category, message in messages %}
+                <div class="px-3 py-2 rounded-lg border text-sm {% if category == 'error' %}border-red-300 bg-red-50 text-red-700{% else %}border-emerald-300 bg-emerald-50 text-emerald-700{% endif %}">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        <form method="post" class="space-y-4">
+          <div>
+            <label class="text-xs text-slate-600">Nama</label>
+            <div class="relative mt-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-regular fa-user"></i></span>
+              <input class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30" name="name" required />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Email</label>
+            <div class="relative mt-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-regular fa-envelope"></i></span>
+              <input class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30" type="email" name="email" required />
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Password</label>
+            <div class="relative mt-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+              <input id="register-password" class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30" type="password" name="password" required />
+              <button data-toggle-password data-target="register-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Toggle password">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Konfirmasi Password</label>
+            <div class="relative mt-1">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+              <input id="register-confirm" class="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/30" type="password" name="confirm" required />
+              <button data-toggle-password data-target="register-confirm" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" aria-label="Toggle password">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg py-3" type="submit">Daftar</button>
+        </form>
+        <div class="flex items-center gap-3 my-4">
+          <div class="h-px bg-slate-200 flex-1"></div>
+          <span class="text-xs text-slate-500">atau</span>
+          <div class="h-px bg-slate-200 flex-1"></div>
+        </div>
+        <a class="w-full inline-flex items-center justify-center gap-2 border border-slate-200 rounded-lg px-4 py-3 text-slate-700 hover:bg-slate-100" href="{{ url_for('main.github_login') }}">
+          <i class="fa-brands fa-github text-lg"></i>
+          <span class="text-sm font-semibold">Continue with GitHub</span>
+        </a>
+        <p class="mt-4 text-sm text-slate-600">Sudah punya akun? <a class="text-teal-600" href="{{ url_for('main.user_login') }}">Login di sini</a></p>
+      </div>
+    </section>
+
+    {% include '_footer.html' %}
+  </div>
+{% endblock %}

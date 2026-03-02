@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="max-w-5xl mx-auto space-y-6">
+  {% set total_events = registrations|length %}
+  {% set total_referrals = 0 %}
+  {% for reg, invited in referrals %}
+    {% set total_referrals = total_referrals + (invited|length) %}
+  {% endfor %}
+
+  <div class="space-y-6">
+    <section class="pb-4 border-b border-slate-200">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Dashboard Peserta</p>
+          <h2 class="text-2xl font-semibold tracking-tight mt-1">Hai, {{ participant.name }}.</h2>
+          <p class="text-sm text-slate-600">{{ participant.email }}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a class="bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-full px-4 py-2 text-sm" href="{{ url_for('main.home') }}#events">Cari Event</a>
+          <a class="bg-white border border-slate-200 text-slate-700 rounded-full px-4 py-2 text-sm" href="{{ url_for('main.user_logout') }}">Logout</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid gap-4 md:grid-cols-3 border-b border-slate-200 pb-4">
+      <div>
+        <p class="text-xs uppercase tracking-wider text-slate-500">Event Diikuti</p>
+        <p class="text-2xl font-semibold mt-2">{{ total_events }}</p>
+        <p class="text-xs text-slate-500 mt-1">Total event yang kamu ikuti.</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wider text-slate-500">Referral</p>
+        <p class="text-2xl font-semibold mt-2">{{ total_referrals }}</p>
+        <p class="text-xs text-slate-500 mt-1">Total teman yang kamu ajak.</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wider text-slate-500">Status</p>
+        <p class="text-2xl font-semibold mt-2">Aktif</p>
+        <p class="text-xs text-slate-500 mt-1">Akun kamu siap ikut event baru.</p>
+      </div>
+    </section>
+
+    <section class="grid gap-4 lg:grid-cols-[1.4fr,1fr]">
+      <div class="pb-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Event Diikuti</h3>
+          <span class="text-xs text-slate-500">{{ total_events }} event</span>
+        </div>
+        <div class="space-y-4">
+          {% for reg in registrations %}
+            <div class="border border-slate-200 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <p class="font-semibold">{{ reg.event.title }}</p>
+                <span class="text-xs text-slate-500">{{ reg.event.start_at.strftime('%d %b %Y') }}</span>
+              </div>
+              <p class="text-xs text-slate-600">Mulai: {{ reg.event.start_at.strftime('%H:%M') }} | Durasi {{ reg.event.duration_minutes }} menit</p>
+              {% if reg.event.meet_link %}
+                <a class="text-sm text-teal-700" href="{{ reg.event.meet_link }}" target="_blank">Link Webinar</a>
+              {% else %}
+                <p class="text-xs text-slate-500">Link webinar muncul 15 menit sebelum mulai.</p>
+              {% endif %}
+              <div class="text-xs text-slate-600">
+                Referral kamu: <span class="text-teal-700">{{ reg.referral_code }}</span>
+              </div>
+            </div>
+          {% else %}
+            <p class="text-slate-500">Belum ada event yang diikuti.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="pb-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Referral Kamu</h3>
+          <span class="text-xs text-slate-500">{{ total_referrals }} total</span>
+        </div>
+        <div class="space-y-4">
+          {% for reg, invited in referrals %}
+            <div class="border border-slate-200 rounded-xl p-3">
+              <p class="font-semibold">{{ reg.event.title }}</p>
+              <p class="text-xs text-slate-600">Total referral: {{ invited | length }}</p>
+              <ul class="text-sm text-slate-700 list-disc list-inside mt-2">
+                {% for inv in invited %}
+                  <li>{{ inv.participant.name }} ({{ inv.participant.email }})</li>
+                {% else %}
+                  <li class="text-slate-500">Belum ada referral.</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% else %}
+            <p class="text-slate-500">Belum ada referral.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  </div>
+  </div>
+{% endblock %}

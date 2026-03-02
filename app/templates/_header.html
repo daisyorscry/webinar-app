@@ -1,0 +1,19 @@
+<header class="sticky top-4 z-20">
+  <div class="backdrop-blur bg-white/80 border border-slate-200 rounded-2xl px-5 py-4 shadow-sm">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <h2 class="text-2xl font-semibold tracking-tight">Webinar ITTS</h2>
+      </div>
+      {% set path = request.path %}
+      <nav class="flex flex-wrap gap-2 text-sm">
+        <a class="px-3 py-2 rounded-full {% if path == url_for('main.home') %}bg-teal-700 text-white{% else %}text-teal-700 hover:bg-teal-50{% endif %}" href="{{ url_for('main.home') }}">Home</a>
+        <a class="px-3 py-2 rounded-full text-teal-700 hover:bg-teal-50" href="{{ url_for('main.home') }}#events">Event</a>
+        {% if session.get('participant_id') %}
+          <a class="ml-2 bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-full px-5 py-2" href="{{ url_for('main.user_dashboard') }}">Back to Dashboard</a>
+        {% else %}
+          <a class="ml-2 bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-full px-5 py-2" href="{{ url_for('main.user_login') }}">Login</a>
+        {% endif %}
+      </nav>
+    </div>
+  </div>
+</header>

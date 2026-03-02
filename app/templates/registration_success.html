@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+    <h2 class="text-2xl font-semibold">Registrasi berhasil</h2>
+    <p class="text-slate-700">Halo {{ registration.participant.name }}, kamu berhasil daftar untuk {{ registration.event.title }}.</p>
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+      <p class="text-sm text-slate-600">Kode referral kamu</p>
+      <p class="text-xl font-semibold text-teal-300">{{ registration.referral_code }}</p>
+      <p class="text-xs text-slate-500 mt-2">Bagikan link ini ke teman:</p>
+      <p class="text-xs text-slate-600">{{ url_for('main.invitation', code=registration.referral_code, _external=true) }}</p>
+    </div>
+    {% if registration.certificate %}
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <p class="text-sm text-slate-600">Certificate Number</p>
+        <p class="text-lg font-semibold text-teal-300">{{ registration.certificate.certificate_number }}</p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

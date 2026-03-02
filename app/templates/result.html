@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="card">
+    <h2>Hasil Verifikasi</h2>
+    <p><strong>Nama:</strong> {{ participant.name }}</p>
+    <p><strong>Email:</strong> {{ participant.email }}</p>
+    <p><strong>Status Kehadiran:</strong> {{ participant.attendance_status }}</p>
+    <p><strong>Kelulusan:</strong>
+      {% if participant.graduation_status and participant.graduation_status.passed %}
+        <span class="badge success">Lulus</span>
+      {% else %}
+        <span class="badge danger">Tidak Lulus</span>
+      {% endif %}
+    </p>
+    {% if participant.graduation_status %}
+      <p><strong>Catatan:</strong> {{ participant.graduation_status.reason }}</p>
+    {% endif %}
+    {% if participant.certificate %}
+      <a class="button" href="{{ url_for('main.certificate', participant_id=participant.id) }}">Lihat Sertifikat</a>
+    {% endif %}
+  </div>
+{% endblock %}

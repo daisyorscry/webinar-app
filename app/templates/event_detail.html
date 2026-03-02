@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="space-y-10">
+    {% include '_header.html' %}
+
+    <div class="bg-white border border-slate-200 rounded-3xl p-7 lg:p-9">
+      <div class="space-y-4">
+        <div class="flex items-center gap-3">
+          {% if event.start_at <= now and event.end_at >= now %}
+            <span class="text-xs uppercase tracking-wider text-emerald-600 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-3 py-1">Sedang Berlangsung</span>
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          {% elif event.start_at > now %}
+            <span class="text-xs uppercase tracking-wider text-sky-600 bg-sky-500/10 border border-sky-500/30 rounded-full px-3 py-1">Akan Datang</span>
+            <span class="h-2.5 w-2.5 rounded-full bg-sky-400"></span>
+          {% else %}
+            <span class="text-xs uppercase tracking-wider text-slate-700 bg-slate-500/10 border border-slate-500/30 rounded-full px-3 py-1">Selesai</span>
+            <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
+          {% endif %}
+          <span class="text-xs text-slate-500">Kuota: {{ event.quota }} | Terdaftar: {{ registered_count }} | Sisa: {{ remaining_quota }}</span>
+        </div>
+        <h2 class="text-3xl font-semibold">{{ event.title }}</h2>
+        <p class="text-slate-700 text-base leading-relaxed">{{ event.description or 'Webinar dengan mentor pilihan.' }}</p>
+        <div class="grid gap-2 sm:grid-cols-2 text-sm text-slate-800">
+          <div class="flex items-start gap-3">
+            <span class="text-xs uppercase tracking-wider text-slate-600 min-w-[120px]">Mulai</span>
+            <span class="font-semibold">{{ event.start_at.strftime('%d %b %Y %H:%M') }}</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-xs uppercase tracking-wider text-slate-600 min-w-[120px]">Berakhir</span>
+            <span class="font-semibold">{{ event.end_at.strftime('%d %b %Y %H:%M') }}</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-xs uppercase tracking-wider text-slate-600 min-w-[120px]">Durasi</span>
+            <span class="font-semibold">{{ event.duration_minutes }} menit</span>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-xs uppercase tracking-wider text-slate-600 min-w-[120px]">Registrasi tutup</span>
+            <span class="font-semibold">{{ event.registration_deadline.strftime('%d %b %Y %H:%M') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 flex gap-4 items-center">
+        <img class="w-16 h-16 rounded-full object-cover" src="{{ event.mentor.photo_url or 'https://placehold.co/160x160' }}" alt="Mentor" />
+        <div>
+          <p class="text-xs uppercase tracking-wider text-slate-600">Mentor</p>
+          <h3 class="text-xl font-semibold">{{ event.mentor.name }}</h3>
+          <p class="text-sm text-slate-600">{{ event.mentor.bio or '' }}</p>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-7 space-y-5">
+        <h3 class="text-2xl font-semibold">Tentang Event</h3>
+        <p class="text-base text-slate-800 leading-relaxed">{{ event.description or 'Webinar ini membahas topik penting dengan mentor berpengalaman.' }}</p>
+        <div class="text-sm text-slate-800 space-y-5">
+          <div>
+            <p class="text-xs text-slate-600 uppercase tracking-wider">Yang akan dipelajari</p>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in (event.objectives or '').splitlines() if item.strip() %}
+                <li>• {{ item }}</li>
+              {% else %}
+                <li>• Konsep utama & best practices</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="text-xs text-slate-600 uppercase tracking-wider">Benefit</p>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in (event.benefits or '').splitlines() if item.strip() %}
+                <li>• {{ item }}</li>
+              {% else %}
+                <li>• Akses materi & rekaman</li>
+                <li>• Sertifikat digital</li>
+                <li>• Networking komunitas</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="text-xs text-slate-600 uppercase tracking-wider">Materi</p>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in (event.materials or '').splitlines() if item.strip() %}
+                <li>• {{ item }}</li>
+              {% else %}
+                <li>• Ringkasan materi akan muncul di sini.</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="text-xs text-slate-600 uppercase tracking-wider">Prasyarat</p>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in (event.requirements or '').splitlines() if item.strip() %}
+                <li>• {{ item }}</li>
+              {% else %}
+                <li>• Tidak ada prasyarat khusus.</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <div>
+            <p class="text-xs text-slate-600 uppercase tracking-wider">Agenda</p>
+            <ul class="mt-2 space-y-1.5">
+              {% for item in (event.agenda or '').splitlines() if item.strip() %}
+                <li>• {{ item }}</li>
+              {% else %}
+                <li>• Pembukaan, materi inti, studi kasus, Q&A.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+        <div class="space-y-1">
+          <p class="text-xs uppercase tracking-wider text-slate-600">Pendaftaran</p>
+          <h3 class="text-xl font-semibold">Gabung Event</h3>
+          <p class="text-sm text-slate-600">Dapatkan akses webinar dan sertifikat digital.</p>
+        </div>
+        {% if session.get('participant_id') %}
+          <form method="post" action="{{ url_for('main.event_register', event_id=event.id) }}" class="space-y-4">
+            <div>
+              <label class="text-xs text-slate-600">Referral (opsional)</label>
+              <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500/40" name="referral_code" value="{{ referral or '' }}" placeholder="Masukkan kode referral" />
+            </div>
+            <button class="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg py-3" type="submit">Daftar Sekarang</button>
+          </form>
+        {% else %}
+          <p class="text-sm text-slate-600">Login dulu untuk mendaftar.</p>
+          <div class="flex gap-3">
+            <a class="bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg px-4 py-2" href="{{ url_for('main.user_login') }}">Login</a>
+            <a class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg px-4 py-2" href="{{ url_for('main.user_register') }}">Daftar Akun</a>
+          </div>
+        {% endif %}
+        {% if event.meet_link and session.get('participant_id') %}
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <p class="text-xs text-slate-600">Link Webinar</p>
+            <a class="text-sm text-teal-600 break-all" href="{{ event.meet_link }}" target="_blank">{{ event.meet_link }}</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% include '_footer.html' %}
+  </div>
+{% endblock %}

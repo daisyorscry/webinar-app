@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="bg-white border border-slate-200 rounded-2xl p-6 max-w-md space-y-2">
+    <h2 class="text-2xl font-semibold mb-4">Login Admin</h2>
+    <form method="post" class="space-y-4">
+      <div>
+        <label class="text-xs text-slate-600">Email</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="email" name="email" required />
+      </div>
+      <div>
+        <label class="text-xs text-slate-600">Password</label>
+        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="password" name="password" required />
+      </div>
+      <button class="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 font-semibold rounded-lg py-2" type="submit">Login</button>
+    </form>
+    <a class="text-xs text-teal-300" href="{{ url_for('main.admin_reset_request') }}">Lupa password?</a>
+  </div>
+{% endblock %}
