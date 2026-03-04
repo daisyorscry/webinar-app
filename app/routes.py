@@ -10,7 +10,8 @@ from .auth import admin_required, user_required
 from .extensions import db, oauth
 from .models import Admin, Certificate, Event, Mentor, Participant, ParticipantResetToken, Registration
 from .security import generate_token, hash_token, token_expiry
-from .services.email import send_registration_approved_email
+from .services.certificate_render import render_certificate_svg
+from .services.email import send_certificate_ready_email, send_registration_approved_email
 
 bp = Blueprint("main", __name__)
 
@@ -75,8 +76,64 @@ def _maybe_generate_meet_link(event: Event) -> bool:
     return False
 
 
+def _issue_certificate_if_eligible(registration: Registration) -> bool:
+    if not registration.is_approved:
+        return False
+
+    now = datetime.utcnow()
+    if registration.event.end_at > now:
+        return False
+
+    changed = False
+    certificate = registration.certificate
+    if not certificate:
+        certificate = Certificate(
+            participant_id=registration.participant_id,
+            event_id=registration.event_id,
+            registration=registration,
+            certificate_number=_generate_certificate_number(),
+            issued_at=now,
+        )
+        db.session.add(certificate)
+        db.session.flush()
+        changed = True
+
+    if not certificate.emailed_at:
+        if send_certificate_ready_email(certificate):
+            certificate.emailed_at = datetime.utcnow()
+            changed = True
+
+    if changed:
+        db.session.commit()
+
+    return changed
+
+
+def _issue_due_certificates(limit: int = 20) -> None:
+    now = datetime.utcnow()
+    due_registrations = (
+        Registration.query.join(Event, Registration.event_id == Event.id)
+        .outerjoin(Certificate, Certificate.registration_id == Registration.id)
+        .filter(Registration.status == "approved")
+        .filter(Event.end_at <= now)
+        .filter(
+            db.or_(
+                Certificate.id.is_(None),
+                Certificate.emailed_at.is_(None),
+            )
+        )
+        .order_by(Event.end_at.asc())
+        .limit(limit)
+        .all()
+    )
+
+    for registration in due_registrations:
+        _issue_certificate_if_eligible(registration)
+
+
 @bp.route("/")
 def home():
+    _issue_due_certificates()
     now = datetime.utcnow()
     active_events = Event.query.filter(Event.start_at <= now, Event.end_at >= now).order_by(Event.start_at).all()
     upcoming_events = Event.query.filter(Event.start_at > now).order_by(Event.start_at).all()
@@ -91,6 +148,7 @@ def home():
 
 @bp.route("/events/<int:event_id>")
 def event_detail(event_id: int):
+    _issue_due_certificates()
     event = Event.query.get_or_404(event_id)
     if _maybe_generate_meet_link(event):
         db.session.commit()
@@ -104,6 +162,8 @@ def event_detail(event_id: int):
             event_id=event.id,
             participant_id=participant_session_id,
         ).first()
+        if existing_registration:
+            _issue_certificate_if_eligible(existing_registration)
     return render_template(
         "event_detail.html",
         event=event,
@@ -176,7 +236,27 @@ def event_register(event_id: int):
 @bp.route("/registrations/<int:registration_id>")
 def registration_success(registration_id: int):
     registration = Registration.query.get_or_404(registration_id)
+    _issue_certificate_if_eligible(registration)
     return render_template("registration_success.html", registration=registration)
+
+
+@bp.route("/certificates/<certificate_number>")
+def certificate_view(certificate_number: str):
+    certificate = Certificate.query.filter_by(certificate_number=certificate_number).first_or_404()
+    svg_markup = render_certificate_svg(certificate)
+    return render_template("certificate_view.html", certificate=certificate, svg_markup=svg_markup)
+
+
+@bp.route("/certificates/<certificate_number>/download")
+def certificate_download(certificate_number: str):
+    certificate = Certificate.query.filter_by(certificate_number=certificate_number).first_or_404()
+    svg = render_certificate_svg(certificate)
+    filename = f"{certificate.certificate_number}.svg"
+    return Response(
+        svg,
+        mimetype="image/svg+xml",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @bp.route("/invite/<code>")
@@ -188,6 +268,7 @@ def invitation(code: str):
 @bp.route("/admin")
 @admin_required()
 def admin_dashboard():
+    _issue_due_certificates()
     events = Event.query.order_by(Event.start_at.desc()).all()
     mentors = Mentor.query.order_by(Mentor.name).all()
     total_events = Event.query.count()
@@ -331,6 +412,30 @@ def admin_delete_event(event_id: int):
     return redirect(url_for("main.admin_events"))
 
 
+@bp.route("/admin/events/<int:event_id>/complete", methods=["POST"])
+@admin_required()
+def admin_complete_event(event_id: int):
+    event = Event.query.get_or_404(event_id)
+    now = datetime.utcnow()
+
+    if event.end_at <= now:
+        flash("Event ini sudah selesai.", "error")
+        return redirect(url_for("main.admin_events"))
+
+    if event.start_at > now:
+        event.start_at = now - timedelta(minutes=max(event.duration_minutes, 1))
+
+    event.end_at = now
+    if event.registration_deadline > now:
+        event.registration_deadline = now
+
+    db.session.commit()
+    _issue_due_certificates()
+
+    flash("Event berhasil ditandai selesai. Sertifikat peserta yang eligible sedang diproses.", "success")
+    return redirect(url_for("main.admin_events"))
+
+
 @bp.route("/admin/mentors/new", methods=["GET", "POST"])
 @admin_required()
 def admin_create_mentor():
@@ -374,6 +479,7 @@ def admin_mentors():
 @bp.route("/admin/approvals")
 @admin_required()
 def admin_approvals():
+    _issue_due_certificates()
     pending_approvals = (
         Registration.query.join(Event, Registration.event_id == Event.id)
         .filter(Registration.status == "pending")
@@ -386,9 +492,46 @@ def admin_approvals():
 @bp.route("/admin/events/<int:event_id>/registrations")
 @admin_required()
 def admin_event_registrations(event_id: int):
+    _issue_due_certificates()
     event = Event.query.get_or_404(event_id)
     registrations = Registration.query.filter_by(event_id=event_id).order_by(Registration.created_at.desc()).all()
     return render_template("admin_registrations.html", event=event, registrations=registrations)
+
+
+@bp.route("/admin/events/<int:event_id>/certificates/generate", methods=["POST"])
+@admin_required()
+def admin_generate_event_certificates(event_id: int):
+    event = Event.query.get_or_404(event_id)
+    now = datetime.utcnow()
+    if event.end_at > now:
+        flash("Sertifikat hanya bisa digenerate setelah event selesai.", "error")
+        return redirect(url_for("main.admin_events"))
+
+    approved_registrations = (
+        Registration.query.filter_by(event_id=event.id, status="approved")
+        .order_by(Registration.created_at.asc())
+        .all()
+    )
+    if not approved_registrations:
+        flash("Belum ada peserta approved untuk event ini.", "error")
+        return redirect(url_for("main.admin_events"))
+
+    issued_count = 0
+    emailed_count = 0
+    for registration in approved_registrations:
+        had_certificate = registration.certificate is not None
+        had_emailed = bool(registration.certificate and registration.certificate.emailed_at)
+        _issue_certificate_if_eligible(registration)
+        if registration.certificate and not had_certificate:
+            issued_count += 1
+        if registration.certificate and registration.certificate.emailed_at and not had_emailed:
+            emailed_count += 1
+
+    flash(
+        f"Generate sertifikat selesai. {issued_count} sertifikat dibuat, {emailed_count} email dikirim.",
+        "success",
+    )
+    return redirect(url_for("main.admin_events"))
 
 
 @bp.route("/admin/registrations/<int:registration_id>/approve", methods=["POST"])
@@ -407,19 +550,9 @@ def admin_approve_registration(registration_id: int):
     registration.status = "approved"
     registration.approved_at = datetime.utcnow()
     registration.approved_by_admin_id = session.get("admin_id")
-
-    if not registration.certificate:
-        db.session.add(
-            Certificate(
-                participant_id=registration.participant_id,
-                event_id=registration.event_id,
-                registration=registration,
-                certificate_number=_generate_certificate_number(),
-            )
-        )
-
     db.session.commit()
 
+    _issue_certificate_if_eligible(registration)
     email_sent = send_registration_approved_email(registration)
     if email_sent:
         flash("Pendaftar berhasil di-approve dan email notifikasi sudah dikirim.", "success")
@@ -749,6 +882,7 @@ def user_logout():
 @bp.route("/user/dashboard")
 @user_required
 def user_dashboard():
+    _issue_due_certificates()
     participant = Participant.query.get_or_404(session.get("participant_id"))
     now = datetime.utcnow()
     all_registrations = (
@@ -781,6 +915,7 @@ def user_dashboard():
 @bp.route("/user/events")
 @user_required
 def user_events():
+    _issue_due_certificates()
     now = datetime.utcnow()
     participant = Participant.query.get_or_404(session.get("participant_id"))
     active_events = Event.query.filter(Event.start_at <= now, Event.end_at >= now).order_by(Event.start_at).all()
@@ -804,6 +939,7 @@ def user_events():
 @bp.route("/user/history")
 @user_required
 def user_history():
+    _issue_due_certificates()
     participant = Participant.query.get_or_404(session.get("participant_id"))
     now = datetime.utcnow()
     history_registrations = (

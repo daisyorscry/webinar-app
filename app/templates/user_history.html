@@ -24,6 +24,9 @@
           <div class="flex gap-3">
             <a class="text-sm text-teal-700" href="{{ url_for('main.event_detail', event_id=reg.event.id) }}">Detail event</a>
             <a class="text-sm text-teal-700" href="{{ url_for('main.registration_success', registration_id=reg.id) }}">Detail registrasi</a>
+            {% if reg.certificate %}
+              <a class="text-sm text-teal-700" href="{{ url_for('main.certificate_download', certificate_number=reg.certificate.certificate_number) }}">Download sertifikat</a>
+            {% endif %}
           </div>
         </div>
       {% else %}

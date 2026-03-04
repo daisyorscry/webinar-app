@@ -11,22 +11,22 @@ MENTORS = [
     {
         "name": "Nadia Pramesti",
         "bio": "Product designer dengan pengalaman 8 tahun di startup.",
-        "photo_url": "https://placehold.co/120x120",
+        "photo_url": "https://cdn.shopify.com/s/files/1/0573/7569/files/hall_monitor_125_1000x.jpg?v=1724059545",
     },
     {
         "name": "Raka Aditya",
         "bio": "Backend engineer fokus cloud & scalability.",
-        "photo_url": "https://placehold.co/120x120",
+        "photo_url": "https://cdn.shopify.com/s/files/1/0573/7569/files/hall_monitor_125_1000x.jpg?v=1724059545",
     },
     {
         "name": "Salsa Putri",
         "bio": "Data analyst, expert dashboarding dan storytelling.",
-        "photo_url": "https://placehold.co/120x120",
+        "photo_url": "https://cdn.shopify.com/s/files/1/0573/7569/files/hall_monitor_125_1000x.jpg?v=1724059545",
     },
     {
         "name": "Bima Wicaksono",
         "bio": "DevOps & infrastructure automation.",
-        "photo_url": "https://placehold.co/120x120",
+        "photo_url": "https://cdn.shopify.com/s/files/1/0573/7569/files/hall_monitor_125_1000x.jpg?v=1724059545",
     },
 ]
 
@@ -49,11 +49,11 @@ PARTICIPANTS = [
     ("Citra", "citra@example.com"),
     ("Dito", "dito@example.com"),
     ("Eka", "eka@example.com"),
-    ("Fajar", "fajar@example.com"),
+    ("Fajar", "jerrykesysya@gmail.com"),
     ("Gita", "gita@example.com"),
-    ("Hana", "hana@example.com"),
+    ("Hana", "jerrykeysya@gmail.com"),
     ("Indra", "indra@example.com"),
-    ("Juna", "juna@example.com"),
+    ("Juna", "jerrysskeysya@gmail.com"),
 ]
 
 
@@ -145,7 +145,7 @@ def seed():
                 email=email,
                 password_hash=generate_password_hash("user123"),
                 email_verified=True,
-                profile_photo_path="uploads/default-avatar.svg",
+                profile_photo_path="https://cdn.shopify.com/s/files/1/0573/7569/files/hall_monitor_125_1000x.jpg?v=1724059545",
             )
             db.session.add(participant)
         db.session.commit()

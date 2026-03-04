@@ -127,6 +127,7 @@ class Certificate(db.Model):
     registration_id = db.Column(db.Integer, db.ForeignKey("registrations.id"), nullable=False)
     certificate_number = db.Column(db.String(64), unique=True, index=True, nullable=False)
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    emailed_at = db.Column(db.DateTime)
 
     registration = db.relationship("Registration", back_populates="certificate")
 

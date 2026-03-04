@@ -132,7 +132,7 @@
             <div>
               <p class="text-xs uppercase tracking-wider text-slate-500">Certificate</p>
               <h3 class="text-lg font-semibold mt-1">Nomor sertifikat</h3>
-              <p class="text-sm text-slate-600 mt-1">Nomor ini dipakai untuk sertifikat event kamu.</p>
+              <p class="text-sm text-slate-600 mt-1">Sertifikat sudah siap untuk dilihat dan diunduh.</p>
             </div>
             <div class="rounded-xl bg-slate-50 border border-slate-200 p-3 text-amber-700">
               <i class="fa-solid fa-award"></i>
@@ -141,6 +141,22 @@
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
             <p class="text-sm text-slate-600">Certificate Number</p>
             <p class="text-lg font-semibold text-teal-700 mt-1">{{ registration.certificate.certificate_number }}</p>
+          </div>
+          <div class="flex gap-3">
+            <a class="bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-lg px-4 py-2 text-sm" href="{{ url_for('main.certificate_view', certificate_number=registration.certificate.certificate_number) }}">Lihat Sertifikat</a>
+            <a class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg px-4 py-2 text-sm" href="{{ url_for('main.certificate_download', certificate_number=registration.certificate.certificate_number) }}">Download SVG</a>
+          </div>
+        </div>
+      {% elif registration.is_approved %}
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500">Certificate</p>
+            <h3 class="text-lg font-semibold mt-1">Sertifikat belum tersedia</h3>
+            <p class="text-sm text-slate-600 mt-1">Sertifikat akan digenerate otomatis setelah event selesai, lalu link download akan muncul di sini dan dikirim ke email kamu.</p>
+          </div>
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+            <p class="text-sm text-slate-600">Status</p>
+            <p class="text-sm font-semibold text-slate-800 mt-1">Menunggu event selesai</p>
           </div>
         </div>
       {% endif %}

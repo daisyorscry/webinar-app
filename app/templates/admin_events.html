@@ -212,6 +212,22 @@
                         <i class="fa-regular fa-address-book w-4"></i>
                         List Peserta
                       </a>
+                      {% if status != 'done' %}
+                        <form method="post" action="{{ url_for('main.admin_complete_event', event_id=event.id) }}" onsubmit="return confirm('Tandai event ini selesai sekarang? Jika peserta approved ada, sertifikat akan mulai diproses.');">
+                          <button class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50" type="submit">
+                            <i class="fa-regular fa-circle-check w-4"></i>
+                            Selesaikan Event
+                          </button>
+                        </form>
+                      {% endif %}
+                      {% if status == 'done' %}
+                        <form method="post" action="{{ url_for('main.admin_generate_event_certificates', event_id=event.id) }}" onsubmit="return confirm('Generate sertifikat untuk semua peserta approved dan kirim email sekarang?');">
+                          <button class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50" type="submit">
+                            <i class="fa-regular fa-file-lines w-4"></i>
+                            Generate Certificates
+                          </button>
+                        </form>
+                      {% endif %}
                       <form method="post" action="{{ url_for('main.admin_delete_event', event_id=event.id) }}" onsubmit="return confirm('Hapus event ini?');">
                         <button class="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50" type="submit">
                           <i class="fa-regular fa-trash-can w-4"></i>
