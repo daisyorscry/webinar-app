@@ -77,6 +77,10 @@ class Participant(db.Model):
         "ParticipantResetToken", back_populates="participant", cascade="all, delete-orphan"
     )
 
+    @property
+    def has_profile_photo(self) -> bool:
+        return bool(self.profile_photo_path or self.avatar_url)
+
 
 class Registration(db.Model):
     __tablename__ = "registrations"
@@ -86,14 +90,22 @@ class Registration(db.Model):
     event_id = db.Column(db.Integer, db.ForeignKey("events.id"), nullable=False)
     referral_code = db.Column(db.String(32))
     invited_by_registration_id = db.Column(db.Integer, db.ForeignKey("registrations.id"))
+    status = db.Column(db.String(32), nullable=False, default="pending")
+    approved_at = db.Column(db.DateTime)
+    approved_by_admin_id = db.Column(db.Integer, db.ForeignKey("admins.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     participant = db.relationship("Participant", back_populates="registrations")
     event = db.relationship("Event", back_populates="registrations")
     invited_by = db.relationship("Registration", remote_side=[id])
+    approved_by_admin = db.relationship("Admin")
     certificate = db.relationship(
         "Certificate", back_populates="registration", uselist=False, cascade="all, delete-orphan"
     )
+
+    @property
+    def is_approved(self) -> bool:
+        return self.status == "approved"
 
 
 class GraduationStatus(db.Model):

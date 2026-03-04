@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="space-y-6">
+    <section class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Approval</p>
+        <h2 class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Pending Approval</h2>
+        <p class="mt-2 text-sm text-slate-600">Daftar pendaftar event yang masih menunggu persetujuan admin.</p>
+      </div>
+      <a class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_events') }}">
+        <i class="fa-regular fa-calendar-days"></i>
+        Lihat Event
+      </a>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">Daftar Approval</h3>
+          <p class="text-sm text-slate-500">{{ pending_approvals|length }} pendaftaran menunggu approval.</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 text-slate-600">
+            <tr>
+              <th class="px-5 py-4 text-left font-semibold">Peserta</th>
+              <th class="px-5 py-4 text-left font-semibold">Event</th>
+              <th class="px-5 py-4 text-left font-semibold">Status</th>
+              <th class="px-5 py-4 text-left font-semibold">Diajukan</th>
+              <th class="px-5 py-4 text-left font-semibold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            {% for reg in pending_approvals %}
+              <tr>
+                <td class="px-5 py-4">
+                  <div class="space-y-1">
+                    <p class="font-semibold text-slate-900">{{ reg.participant.name }}</p>
+                    <p class="text-xs text-slate-500">{{ reg.participant.email }}</p>
+                  </div>
+                </td>
+                <td class="px-5 py-4 text-slate-700">{{ reg.event.title }}</td>
+                <td class="px-5 py-4">
+                  <span class="inline-flex rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-medium text-amber-700">Pending</span>
+                </td>
+                <td class="px-5 py-4 text-slate-500">{{ reg.created_at.strftime('%d %b %Y %H:%M') }}</td>
+                <td class="px-5 py-4">
+                  <form method="post" action="{{ url_for('main.admin_approve_registration', registration_id=reg.id) }}">
+                    <button class="bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-lg px-3 py-2 text-xs" type="submit">Approve</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td class="px-5 py-10 text-center text-slate-500" colspan="5">Tidak ada pendaftaran yang menunggu approval.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}

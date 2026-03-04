@@ -31,7 +31,7 @@
           <p class="text-xs uppercase tracking-wider text-slate-500">Status</p>
           <div class="mt-2 text-sm text-slate-700 space-y-1">
             <p>Email: <span class="font-semibold">{{ 'Terverifikasi' if participant.email_verified else 'Belum terverifikasi' }}</span></p>
-            <p>Foto profil: <span class="font-semibold">{{ 'Sudah diupload' if participant.profile_photo_path else 'Belum ada' }}</span></p>
+            <p>Foto profil: <span class="font-semibold">{{ 'Sudah tersedia' if participant.has_profile_photo else 'Belum ada' }}</span></p>
           </div>
         </div>
 

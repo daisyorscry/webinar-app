@@ -116,7 +116,22 @@
           <h3 class="text-xl font-semibold">Gabung Event</h3>
           <p class="text-sm text-slate-600">Dapatkan akses webinar dan sertifikat digital.</p>
         </div>
-        {% if session.get('participant_id') %}
+        {% if existing_registration %}
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div class="space-y-1">
+              {% if existing_registration.is_approved %}
+                <p class="text-sm font-semibold text-slate-800">Kamu sudah terdaftar di event ini</p>
+                <p class="text-sm text-slate-600">Tidak perlu daftar lagi. Kamu bisa cek detail registrasi dan kode referral kamu.</p>
+              {% else %}
+                <p class="text-sm font-semibold text-slate-800">Pendaftaran kamu sedang diproses</p>
+                <p class="text-sm text-slate-600">Admin perlu approve dulu. Setelah disetujui, kamu baru resmi terdaftar dan akan dapat email notifikasi.</p>
+              {% endif %}
+            </div>
+            <a class="inline-flex items-center justify-center bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-lg px-4 py-2 text-sm" href="{{ url_for('main.registration_success', registration_id=existing_registration.id) }}">
+              Lihat status pendaftaran
+            </a>
+          </div>
+        {% elif session.get('participant_id') %}
           <form method="post" action="{{ url_for('main.event_register', event_id=event.id) }}" class="space-y-4">
             <div>
               <label class="text-xs text-slate-600">Referral (opsional)</label>
@@ -131,7 +146,7 @@
             <a class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg px-4 py-2" href="{{ url_for('main.user_register') }}">Daftar Akun</a>
           </div>
         {% endif %}
-        {% if event.meet_link and session.get('participant_id') %}
+        {% if event.meet_link and existing_registration and existing_registration.is_approved %}
           <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
             <p class="text-xs text-slate-600">Link Webinar</p>
             <a class="text-sm text-teal-600 break-all" href="{{ event.meet_link }}" target="_blank">{{ event.meet_link }}</a>

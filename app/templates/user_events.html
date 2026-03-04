@@ -4,7 +4,31 @@
     <section class="pb-4 border-b border-slate-200">
       <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Events</p>
       <h2 class="text-2xl font-semibold mt-1">Jelajahi Event</h2>
-      <p class="text-sm text-slate-600">Daftar event aktif, mendatang, dan yang sudah selesai dalam satu halaman.</p>
+      <p class="text-sm text-slate-600">Daftar event aktif dan mendatang dalam satu halaman.</p>
+    </section>
+
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Pending Approval</h3>
+        <span class="text-xs text-slate-500">{{ pending_registrations|length }} event</span>
+      </div>
+      <div class="space-y-4">
+        {% for reg in pending_registrations %}
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h4 class="text-lg font-semibold">{{ reg.event.title }}</h4>
+                <p class="text-sm text-slate-600 mt-1">Pendaftaran kamu masih menunggu approval admin.</p>
+              </div>
+              <span class="inline-flex rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-medium text-amber-700">Pending Approval</span>
+            </div>
+            <p class="text-xs text-slate-500">Diajukan: {{ reg.created_at.strftime('%d %b %Y %H:%M') }}</p>
+            <a class="text-sm text-teal-700" href="{{ url_for('main.registration_success', registration_id=reg.id) }}">Lihat status pendaftaran</a>
+          </div>
+        {% else %}
+          <p class="text-sm text-slate-500">Tidak ada pendaftaran yang menunggu approval.</p>
+        {% endfor %}
+      </div>
     </section>
 
     <section class="space-y-6">
@@ -58,27 +82,6 @@
           </div>
         {% endfor %}
 
-        {% for event in past_events %}
-          <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between">
-              <span class="text-xs uppercase tracking-wider text-slate-600 bg-slate-100 border border-slate-200 rounded-full px-3 py-1">Selesai</span>
-              <span class="h-2.5 w-2.5 rounded-full bg-slate-400"></span>
-            </div>
-            <div class="space-y-1">
-              <h4 class="text-lg font-semibold">{{ event.title }}</h4>
-              <p class="text-sm text-slate-600">{{ event.description or 'Event sudah selesai.' }}</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <img class="w-10 h-10 rounded-full object-cover border border-slate-200" src="{{ event.mentor.photo_url or 'https://placehold.co/100x100' }}" alt="Mentor" />
-              <div>
-                <p class="text-xs text-slate-500">Mentor</p>
-                <p class="text-sm font-medium">{{ event.mentor.name }}</p>
-              </div>
-            </div>
-            <p class="text-xs text-slate-500">Selesai: {{ event.end_at.strftime('%d %b %Y %H:%M') }}</p>
-            <a class="text-sm text-teal-700" href="{{ url_for('main.event_detail', event_id=event.id) }}">Lihat detail</a>
-          </div>
-        {% endfor %}
       </div>
     </section>
   </div>

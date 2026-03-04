@@ -3,15 +3,37 @@ from uuid import uuid4
 import os
 import csv
 from io import StringIO
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for, Response, current_app
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for, Response, current_app, has_request_context
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from .auth import admin_required, user_required
 from .extensions import db, oauth
-from .models import Admin, AdminResetToken, Certificate, Event, Mentor, Participant, ParticipantResetToken, Registration
+from .models import Admin, Certificate, Event, Mentor, Participant, ParticipantResetToken, Registration
 from .security import generate_token, hash_token, token_expiry
+from .services.email import send_registration_approved_email
 
 bp = Blueprint("main", __name__)
+
+
+@bp.app_context_processor
+def inject_user_sidebar_registrations():
+    if not has_request_context():
+        return {"sidebar_registrations": []}
+
+    participant_id = session.get("participant_id")
+    if not participant_id:
+        return {"sidebar_registrations": []}
+
+    now = datetime.utcnow()
+    sidebar_registrations = (
+        Registration.query.join(Event, Registration.event_id == Event.id)
+        .filter(Registration.participant_id == participant_id)
+        .filter(Event.end_at >= now)
+        .order_by(Event.start_at.asc())
+        .limit(5)
+        .all()
+    )
+    return {"sidebar_registrations": sidebar_registrations}
 
 
 def _generate_invitation_code() -> str:
@@ -73,8 +95,15 @@ def event_detail(event_id: int):
     if _maybe_generate_meet_link(event):
         db.session.commit()
     referral = request.args.get("ref")
-    registered_count = Registration.query.filter_by(event_id=event.id).count()
+    registered_count = Registration.query.filter_by(event_id=event.id, status="approved").count()
     remaining_quota = max(event.quota - registered_count, 0)
+    existing_registration = None
+    participant_session_id = session.get("participant_id")
+    if participant_session_id:
+        existing_registration = Registration.query.filter_by(
+            event_id=event.id,
+            participant_id=participant_session_id,
+        ).first()
     return render_template(
         "event_detail.html",
         event=event,
@@ -82,6 +111,7 @@ def event_detail(event_id: int):
         now=datetime.utcnow(),
         registered_count=registered_count,
         remaining_quota=remaining_quota,
+        existing_registration=existing_registration,
     )
 
 
@@ -94,7 +124,7 @@ def event_register(event_id: int):
         flash("Pendaftaran sudah ditutup.", "error")
         return redirect(url_for("main.event_detail", event_id=event_id))
 
-    current_count = Registration.query.filter_by(event_id=event.id).count()
+    current_count = Registration.query.filter_by(event_id=event.id, status="approved").count()
     if current_count >= event.quota:
         flash("Kuota sudah penuh.", "error")
         return redirect(url_for("main.event_detail", event_id=event_id))
@@ -108,38 +138,38 @@ def event_register(event_id: int):
     if not participant.email_verified:
         flash("Verifikasi email dulu sebelum daftar event.", "error")
         return redirect(url_for("main.user_profile"))
-    if not participant.profile_photo_path:
+    if not participant.has_profile_photo:
         flash("Upload foto profil dulu sebelum daftar event.", "error")
         return redirect(url_for("main.user_profile"))
     referral_code = request.form.get("referral_code", "").strip().upper() or None
 
     existing = Registration.query.filter_by(participant=participant, event=event).first()
     if existing:
-        flash("Anda sudah terdaftar untuk event ini.", "error")
+        if existing.status == "pending":
+            flash("Pendaftaran kamu sedang menunggu approval admin.", "error")
+        else:
+            flash("Anda sudah terdaftar untuk event ini.", "error")
         return redirect(url_for("main.event_detail", event_id=event_id))
 
     invited_by = None
     if referral_code:
-        invited_by = Registration.query.filter_by(referral_code=referral_code, event=event).first()
+        invited_by = Registration.query.filter_by(
+            referral_code=referral_code,
+            event=event,
+            status="approved",
+        ).first()
 
     registration = Registration(
         participant=participant,
         event=event,
         referral_code=_generate_invitation_code(),
         invited_by=invited_by,
+        status="pending",
     )
     db.session.add(registration)
-    db.session.flush()
-    certificate = Certificate(
-        participant_id=participant.id,
-        event_id=event.id,
-        registration=registration,
-        certificate_number=_generate_certificate_number(),
-    )
-    db.session.add(certificate)
     db.session.commit()
 
-    flash("Pendaftaran berhasil. Simpan kode referral Anda.", "success")
+    flash("Permintaan pendaftaran berhasil dikirim. Tunggu approval dari admin.", "success")
     return redirect(url_for("main.registration_success", registration_id=registration.id))
 
 
@@ -151,7 +181,7 @@ def registration_success(registration_id: int):
 
 @bp.route("/invite/<code>")
 def invitation(code: str):
-    registration = Registration.query.filter_by(referral_code=code.upper()).first_or_404()
+    registration = Registration.query.filter_by(referral_code=code.upper(), status="approved").first_or_404()
     return redirect(url_for("main.event_detail", event_id=registration.event_id, ref=code.upper()))
 
 
@@ -322,12 +352,80 @@ def admin_create_mentor():
     return redirect(url_for("main.admin_dashboard"))
 
 
+@bp.route("/admin/mentors")
+@admin_required()
+def admin_mentors():
+    q = request.args.get("q", "").strip()
+    query = Mentor.query.order_by(Mentor.name)
+
+    if q:
+        like_value = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Mentor.name.ilike(like_value),
+                Mentor.bio.ilike(like_value),
+            )
+        )
+
+    mentors = query.all()
+    return render_template("admin_mentors.html", mentors=mentors, filters={"q": q})
+
+
+@bp.route("/admin/approvals")
+@admin_required()
+def admin_approvals():
+    pending_approvals = (
+        Registration.query.join(Event, Registration.event_id == Event.id)
+        .filter(Registration.status == "pending")
+        .order_by(Registration.created_at.desc())
+        .all()
+    )
+    return render_template("admin_approvals.html", pending_approvals=pending_approvals)
+
+
 @bp.route("/admin/events/<int:event_id>/registrations")
 @admin_required()
 def admin_event_registrations(event_id: int):
     event = Event.query.get_or_404(event_id)
-    registrations = Registration.query.filter_by(event_id=event_id).all()
+    registrations = Registration.query.filter_by(event_id=event_id).order_by(Registration.created_at.desc()).all()
     return render_template("admin_registrations.html", event=event, registrations=registrations)
+
+
+@bp.route("/admin/registrations/<int:registration_id>/approve", methods=["POST"])
+@admin_required()
+def admin_approve_registration(registration_id: int):
+    registration = Registration.query.get_or_404(registration_id)
+    if registration.status == "approved":
+        flash("Pendaftar ini sudah di-approve.", "error")
+        return redirect(url_for("main.admin_event_registrations", event_id=registration.event_id))
+
+    approved_count = Registration.query.filter_by(event_id=registration.event_id, status="approved").count()
+    if approved_count >= registration.event.quota:
+        flash("Kuota event sudah penuh. Tidak bisa approve pendaftar baru.", "error")
+        return redirect(url_for("main.admin_event_registrations", event_id=registration.event_id))
+
+    registration.status = "approved"
+    registration.approved_at = datetime.utcnow()
+    registration.approved_by_admin_id = session.get("admin_id")
+
+    if not registration.certificate:
+        db.session.add(
+            Certificate(
+                participant_id=registration.participant_id,
+                event_id=registration.event_id,
+                registration=registration,
+                certificate_number=_generate_certificate_number(),
+            )
+        )
+
+    db.session.commit()
+
+    email_sent = send_registration_approved_email(registration)
+    if email_sent:
+        flash("Pendaftar berhasil di-approve dan email notifikasi sudah dikirim.", "success")
+    else:
+        flash("Pendaftar berhasil di-approve, tapi email notifikasi belum terkirim.", "success")
+    return redirect(url_for("main.admin_event_registrations", event_id=registration.event_id))
 
 
 @bp.route("/admin/events/<int:event_id>/meet-generate", methods=["POST"])
@@ -428,52 +526,6 @@ def admin_regenerate_token():
     return redirect(url_for("main.admin_dashboard"))
 
 
-@bp.route("/admin/reset", methods=["GET", "POST"])
-def admin_reset_request():
-    if request.method == "GET":
-        return render_template("admin_reset_request.html")
-
-    email = request.form.get("email", "").strip().lower()
-    admin = Admin.query.filter_by(email=email).first()
-    if not admin:
-        flash("Email admin tidak ditemukan.", "error")
-        return redirect(url_for("main.admin_reset_request"))
-
-    raw = generate_token()
-    token = AdminResetToken(
-        admin=admin,
-        token_hash=hash_token(raw),
-        expires_at=token_expiry(30),
-    )
-    db.session.add(token)
-    db.session.commit()
-    return render_template("admin_reset_sent.html", token=raw)
-
-
-@bp.route("/admin/reset/<token>", methods=["GET", "POST"])
-def admin_reset_form(token: str):
-    token_hash = hash_token(token)
-    reset = AdminResetToken.query.filter_by(token_hash=token_hash, used_at=None).first()
-    if not reset or reset.expires_at < datetime.utcnow():
-        flash("Token reset tidak valid atau sudah kadaluarsa.", "error")
-        return redirect(url_for("main.admin_login"))
-
-    if request.method == "GET":
-        return render_template("admin_reset_form.html", token=token)
-
-    password = request.form.get("password", "")
-    confirm = request.form.get("confirm", "")
-    if not password or password != confirm:
-        flash("Password tidak cocok.", "error")
-        return redirect(url_for("main.admin_reset_form", token=token))
-
-    reset.admin.password_hash = generate_password_hash(password)
-    reset.used_at = datetime.utcnow()
-    db.session.commit()
-    flash("Password berhasil direset. Silakan login.", "success")
-    return redirect(url_for("main.admin_login"))
-
-
 @bp.route("/admin/events/<int:event_id>/registrations.csv")
 @admin_required()
 def admin_registrations_csv(event_id: int):
@@ -488,6 +540,7 @@ def admin_registrations_csv(event_id: int):
             "Email",
             "Referral",
             "Invited By",
+            "Status",
             "Certificate Number",
             "Created At",
         ]
@@ -499,6 +552,7 @@ def admin_registrations_csv(event_id: int):
                 reg.participant.email,
                 reg.referral_code or "",
                 reg.invited_by.referral_code if reg.invited_by else "",
+                reg.status,
                 reg.certificate.certificate_number if reg.certificate else "",
                 reg.created_at.isoformat() if reg.created_at else "",
             ]
@@ -696,17 +750,30 @@ def user_logout():
 @user_required
 def user_dashboard():
     participant = Participant.query.get_or_404(session.get("participant_id"))
-    registrations = Registration.query.filter_by(participant_id=participant.id).all()
+    now = datetime.utcnow()
+    all_registrations = (
+        Registration.query.join(Event, Registration.event_id == Event.id)
+        .filter(Registration.participant_id == participant.id)
+        .order_by(Event.start_at.desc())
+        .all()
+    )
+    registrations = [reg for reg in all_registrations if reg.is_approved and reg.event.end_at >= now]
+    pending_registrations = [reg for reg in all_registrations if not reg.is_approved and reg.event.end_at >= now]
+    history_registrations = [reg for reg in all_registrations if reg.is_approved and reg.event.end_at < now]
 
     referrals = []
-    for reg in registrations:
-        invited = Registration.query.filter_by(invited_by_registration_id=reg.id).all()
+    for reg in all_registrations:
+        invited = Registration.query.filter_by(invited_by_registration_id=reg.id, status="approved").all()
         referrals.append((reg, invited))
 
     return render_template(
         "user_dashboard.html",
         participant=participant,
         registrations=registrations,
+        pending_registrations=pending_registrations,
+        total_registrations=len(all_registrations),
+        pending_count=len(pending_registrations),
+        history_count=len(history_registrations),
         referrals=referrals,
     )
 
@@ -715,14 +782,42 @@ def user_dashboard():
 @user_required
 def user_events():
     now = datetime.utcnow()
+    participant = Participant.query.get_or_404(session.get("participant_id"))
     active_events = Event.query.filter(Event.start_at <= now, Event.end_at >= now).order_by(Event.start_at).all()
     upcoming_events = Event.query.filter(Event.start_at > now).order_by(Event.start_at).all()
-    past_events = Event.query.filter(Event.end_at < now).order_by(Event.end_at.desc()).limit(12).all()
+    pending_registrations = (
+        Registration.query.join(Event, Registration.event_id == Event.id)
+        .filter(Registration.participant_id == participant.id)
+        .filter(Registration.status == "pending")
+        .filter(Event.end_at >= now)
+        .order_by(Event.start_at.asc())
+        .all()
+    )
     return render_template(
         "user_events.html",
         active_events=active_events,
         upcoming_events=upcoming_events,
-        past_events=past_events,
+        pending_registrations=pending_registrations,
+    )
+
+
+@bp.route("/user/history")
+@user_required
+def user_history():
+    participant = Participant.query.get_or_404(session.get("participant_id"))
+    now = datetime.utcnow()
+    history_registrations = (
+        Registration.query.join(Event, Registration.event_id == Event.id)
+        .filter(Registration.participant_id == participant.id)
+        .filter(Registration.status == "approved")
+        .filter(Event.end_at < now)
+        .order_by(Event.end_at.desc())
+        .all()
+    )
+    return render_template(
+        "user_history.html",
+        participant=participant,
+        history_registrations=history_registrations,
     )
 
 

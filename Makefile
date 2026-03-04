@@ -1,17 +1,23 @@
 SHELL := /bin/bash
 
-.PHONY: upgrade run seed fresh
+.PHONY: upgrade run seed fresh wait-db
+
+wait-db:
+	@python wait_for_db.py
 
 upgrade:
+	@$(MAKE) wait-db
 	@export FLASK_APP=wsgi.py && flask db upgrade
 
 run:
 	@flask --app wsgi.py run --debug
 
 seed:
-	@export DATABASE_URL=postgresql+psycopg2://app_user:secret123@localhost:5432/webinar && python seed.py
+	@$(MAKE) wait-db
+	@python seed.py
 
 fresh:
-	@export DATABASE_URL=postgresql+psycopg2://app_user:secret123@localhost:5432/webinar && python reset_db.py
-	@export DATABASE_URL=postgresql+psycopg2://app_user:secret123@localhost:5432/webinar && export FLASK_APP=wsgi.py && flask db upgrade
-	@export DATABASE_URL=postgresql+psycopg2://app_user:secret123@localhost:5432/webinar && python seed.py
+	@$(MAKE) wait-db
+	@python reset_db.py
+	@export FLASK_APP=wsgi.py && flask db upgrade
+	@python seed.py

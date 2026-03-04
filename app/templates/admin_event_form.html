@@ -1,67 +1,230 @@
 {% extends 'base.html' %}
+{% block extra_head %}
+  {{ super() }}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+{% endblock %}
 {% block content %}
-  <div class="bg-white border border-slate-200 rounded-2xl p-6 max-w-2xl">
-    <h2 class="text-2xl font-semibold mb-4">{{ 'Edit Event' if event else 'Buat Event Baru' }}</h2>
-    <form method="post" class="space-y-4">
+  <div class="space-y-6">
+    <section class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <label class="text-xs text-slate-600">Judul</label>
-        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="title" value="{{ event.title if event else '' }}" required />
+        <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Events</p>
+        <h2 class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">{{ 'Edit Event' if event else 'Buat Event Baru' }}</h2>
+        <p class="mt-2 text-sm text-slate-600">Lengkapi informasi event, jadwal, kuota, dan konten webinar dalam satu form.</p>
       </div>
-      <div>
-        <label class="text-xs text-slate-600">Deskripsi</label>
-        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="description">{{ event.description if event else '' }}</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Objectives (apa yang dipelajari)</label>
-        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="objectives" placeholder="Pisahkan per baris">{{ event.objectives if event else '' }}</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Materials (materi)</label>
-        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="materials" placeholder="Pisahkan per baris">{{ event.materials if event else '' }}</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Benefits</label>
-        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="benefits" placeholder="Pisahkan per baris">{{ event.benefits if event else '' }}</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Requirements (prasyarat)</label>
-        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="requirements" placeholder="Pisahkan per baris">{{ event.requirements if event else '' }}</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Agenda</label>
-        <textarea class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="agenda" placeholder="Pisahkan per baris">{{ event.agenda if event else '' }}</textarea>
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Mentor</label>
-        <select class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="mentor_id" required>
-          {% for mentor in mentors %}
-            <option value="{{ mentor.id }}" {% if event and event.mentor_id == mentor.id %}selected{% endif %}>{{ mentor.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="grid gap-4 md:grid-cols-2">
+      <a class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_events') }}">
+        <i class="fa-regular fa-calendar-days"></i>
+        Kembali ke Event
+      </a>
+    </section>
+
+    <form method="post" class="space-y-6">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
         <div>
-          <label class="text-xs text-slate-600">Kuota</label>
-          <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="number" name="quota" min="1" value="{{ event.quota if event else '' }}" required />
+          <h3 class="text-base font-semibold text-slate-900">Informasi Utama</h3>
+          <p class="text-sm text-slate-500">Data dasar event yang akan tampil ke peserta.</p>
         </div>
         <div>
-          <label class="text-xs text-slate-600">Durasi (menit)</label>
-          <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="number" name="duration_minutes" min="1" value="{{ event.duration_minutes if event else '' }}" required />
+          <label class="text-xs text-slate-600">Judul</label>
+          <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="title" value="{{ event.title if event else '' }}" required />
         </div>
+        <div>
+          <label class="text-xs text-slate-600">Deskripsi</label>
+          <textarea class="w-full mt-1 min-h-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="description">{{ event.description if event else '' }}</textarea>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h3 class="text-base font-semibold text-slate-900">Mentor</h3>
+            <p class="text-sm text-slate-500">Pilih mentor untuk event ini dari daftar mentor yang tersedia.</p>
+          </div>
+          <div class="text-left lg:text-right">
+            <p class="text-2xl font-semibold text-slate-900">{{ mentors|length }}</p>
+            <p class="text-xs text-slate-500">mentor tersedia</p>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-600">Cari Mentor</label>
+          <div class="mt-1 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+            <input
+              id="mentorSearch"
+              class="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              type="text"
+              placeholder="Cari nama mentor"
+            />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-600">Pilih Mentor</label>
+          <select id="mentorSelect" class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" name="mentor_id" required>
+            {% for mentor in mentors %}
+              <option value="{{ mentor.id }}" {% if event and event.mentor_id == mentor.id %}selected{% endif %}>{{ mentor.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">Jadwal & Kuota</h3>
+          <p class="text-sm text-slate-500">Atur kapasitas peserta dan waktu pelaksanaan.</p>
+        </div>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="text-xs text-slate-600">Kuota</label>
+            <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="number" name="quota" min="1" value="{{ event.quota if event else '' }}" required />
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Durasi (menit)</label>
+            <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="number" name="duration_minutes" min="1" value="{{ event.duration_minutes if event else '' }}" required />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-600">Rentang Event</label>
+          <div class="mt-1 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <i class="fa-regular fa-calendar text-slate-400"></i>
+            <input
+              id="eventDateRange"
+              class="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              type="text"
+              placeholder="Pilih tanggal & waktu mulai sampai selesai"
+              readonly
+            />
+          </div>
+          <input id="startAtInput" type="hidden" name="start_at" value="{{ event.start_at.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
+          <input id="endAtInput" type="hidden" name="end_at" value="{{ event.end_at.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
+          <p class="mt-2 text-xs text-slate-500">Pilih satu range untuk waktu mulai dan selesai event.</p>
+        </div>
+        <div>
+          <label class="text-xs text-slate-600">Batas Registrasi</label>
+          <div class="mt-1 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <i class="fa-regular fa-clock text-slate-400"></i>
+            <input
+              id="registrationDeadlinePicker"
+              class="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+              type="text"
+              placeholder="Pilih batas waktu registrasi"
+              readonly
+            />
+          </div>
+          <input id="registrationDeadlineInput" type="hidden" name="registration_deadline" value="{{ event.registration_deadline.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">Konten Event</h3>
+          <p class="text-sm text-slate-500">Gunakan satu baris untuk satu item agar lebih rapi di halaman detail.</p>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="text-xs text-slate-600">Objectives (apa yang dipelajari)</label>
+            <textarea class="w-full mt-1 min-h-40 bg-slate-50 border border-slate-200 rounded-lg px-3 py-3" name="objectives" placeholder="Pisahkan per baris">{{ event.objectives if event else '' }}</textarea>
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Materials (materi)</label>
+            <textarea class="w-full mt-1 min-h-40 bg-slate-50 border border-slate-200 rounded-lg px-3 py-3" name="materials" placeholder="Pisahkan per baris">{{ event.materials if event else '' }}</textarea>
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Benefits</label>
+            <textarea class="w-full mt-1 min-h-40 bg-slate-50 border border-slate-200 rounded-lg px-3 py-3" name="benefits" placeholder="Pisahkan per baris">{{ event.benefits if event else '' }}</textarea>
+          </div>
+          <div>
+            <label class="text-xs text-slate-600">Requirements (prasyarat)</label>
+            <textarea class="w-full mt-1 min-h-40 bg-slate-50 border border-slate-200 rounded-lg px-3 py-3" name="requirements" placeholder="Pisahkan per baris">{{ event.requirements if event else '' }}</textarea>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-slate-600">Agenda</label>
+          <textarea class="w-full mt-1 min-h-48 bg-slate-50 border border-slate-200 rounded-lg px-3 py-3" name="agenda" placeholder="Pisahkan per baris">{{ event.agenda if event else '' }}</textarea>
+        </div>
+      </section>
+
+      <div class="flex flex-wrap gap-3">
+        <button class="inline-flex items-center gap-2 rounded-2xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-600" type="submit">
+          <i class="fa-regular fa-floppy-disk"></i>
+          {{ 'Update Event' if event else 'Simpan Event' }}
+        </button>
+        <a class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_events') }}">
+          Batal
+        </a>
       </div>
-      <div>
-        <label class="text-xs text-slate-600">Mulai (ISO)</label>
-        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="datetime-local" name="start_at" value="{{ event.start_at.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Selesai (ISO)</label>
-        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="datetime-local" name="end_at" value="{{ event.end_at.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
-      </div>
-      <div>
-        <label class="text-xs text-slate-600">Batas Registrasi (ISO)</label>
-        <input class="w-full mt-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" type="datetime-local" name="registration_deadline" value="{{ event.registration_deadline.strftime('%Y-%m-%dT%H:%M') if event else '' }}" required />
-      </div>
-      <button class="bg-teal-500 hover:bg-teal-400 text-slate-900 font-semibold rounded-lg px-4 py-2" type="submit">{{ 'Update Event' if event else 'Simpan' }}</button>
     </form>
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (!window.flatpickr) {
+        return;
+      }
+
+      var startAtInput = document.getElementById("startAtInput");
+      var endAtInput = document.getElementById("endAtInput");
+      var eventDateRange = document.getElementById("eventDateRange");
+      var registrationDeadlineInput = document.getElementById("registrationDeadlineInput");
+      var registrationDeadlinePicker = document.getElementById("registrationDeadlinePicker");
+      var mentorSearch = document.getElementById("mentorSearch");
+      var mentorSelect = document.getElementById("mentorSelect");
+
+      function formatHiddenDate(date) {
+        return flatpickr.formatDate(date, "Y-m-d\\TH:i");
+      }
+
+      var rangeDefaults = [];
+      if (startAtInput && startAtInput.value) {
+        rangeDefaults.push(startAtInput.value);
+      }
+      if (endAtInput && endAtInput.value) {
+        rangeDefaults.push(endAtInput.value);
+      }
+
+      if (eventDateRange && startAtInput && endAtInput) {
+        flatpickr(eventDateRange, {
+          enableTime: true,
+          time_24hr: true,
+          mode: "range",
+          dateFormat: "d M Y H:i",
+          altInput: false,
+          rangeSeparator: " s/d ",
+          defaultDate: rangeDefaults,
+          onChange: function (selectedDates) {
+            startAtInput.value = selectedDates[0] ? formatHiddenDate(selectedDates[0]) : "";
+            endAtInput.value = selectedDates[1] ? formatHiddenDate(selectedDates[1]) : "";
+          }
+        });
+      }
+
+      if (registrationDeadlinePicker && registrationDeadlineInput) {
+        flatpickr(registrationDeadlinePicker, {
+          enableTime: true,
+          time_24hr: true,
+          dateFormat: "d M Y H:i",
+          defaultDate: registrationDeadlineInput.value || null,
+          onChange: function (selectedDates) {
+            registrationDeadlineInput.value = selectedDates[0] ? formatHiddenDate(selectedDates[0]) : "";
+          }
+        });
+      }
+
+      if (mentorSearch && mentorSelect) {
+        mentorSearch.addEventListener("input", function () {
+          var query = mentorSearch.value.trim().toLowerCase();
+          Array.prototype.forEach.call(mentorSelect.options, function (option) {
+            var matches = !query || option.text.toLowerCase().indexOf(query) !== -1;
+            option.hidden = !matches;
+          });
+
+          var firstVisible = Array.prototype.find.call(mentorSelect.options, function (option) {
+            return !option.hidden;
+          });
+
+          if (firstVisible && mentorSelect.selectedOptions[0] && mentorSelect.selectedOptions[0].hidden) {
+            mentorSelect.value = firstVisible.value;
+          }
+        });
+      }
+    });
+  </script>
 {% endblock %}

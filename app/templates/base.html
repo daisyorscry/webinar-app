@@ -38,8 +38,12 @@
                   <i class="fa-regular fa-calendar text-sm {% if request.endpoint == 'main.user_events' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
                   Events
                 </a>
-                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100" href="{{ url_for('main.user_logout') }}">
-                  <i class="fa-solid fa-arrow-right-from-bracket text-sm text-slate-400"></i>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.user_history' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.user_history') }}">
+                  <i class="fa-regular fa-clock text-sm {% if request.endpoint == 'main.user_history' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Event History
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-rose-700 hover:bg-rose-50" href="{{ url_for('main.user_logout') }}">
+                  <i class="fa-solid fa-arrow-right-from-bracket text-sm text-rose-400"></i>
                   Logout
                 </a>
               {% elif is_admin %}
@@ -51,12 +55,43 @@
                   <i class="fa-regular fa-calendar-days text-sm {% if request.endpoint == 'main.admin_events' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
                   Events
                 </a>
-                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100" href="{{ url_for('main.admin_logout') }}">
-                  <i class="fa-solid fa-right-from-bracket text-sm text-slate-400"></i>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.admin_mentors' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.admin_mentors') }}">
+                  <i class="fa-regular fa-user text-sm {% if request.endpoint == 'main.admin_mentors' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Mentors
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 {% if request.endpoint == 'main.admin_approvals' %}bg-slate-100 font-semibold text-teal-700 border-l-2 border-teal-600 pl-3{% endif %}" href="{{ url_for('main.admin_approvals') }}">
+                  <i class="fa-regular fa-circle-check text-sm {% if request.endpoint == 'main.admin_approvals' %}text-teal-600{% else %}text-slate-400{% endif %}"></i>
+                  Approval
+                </a>
+                <a class="flex items-center gap-3 px-2 py-2.5 rounded-lg text-rose-700 hover:bg-rose-50" href="{{ url_for('main.admin_logout') }}">
+                  <i class="fa-solid fa-right-from-bracket text-sm text-rose-400"></i>
                   Logout
                 </a>
               {% endif %}
             </nav>
+            {% if is_participant %}
+              <div class="space-y-3 border-t border-slate-200 pt-4">
+                <div class="flex items-center justify-between gap-2">
+                  <p class="text-xs uppercase tracking-wider text-slate-500">Event Saya</p>
+                  <a class="text-[11px] text-teal-700 hover:text-teal-600" href="{{ url_for('main.user_dashboard') }}">Lihat semua</a>
+                </div>
+                <div class="space-y-2">
+                  {% for reg in sidebar_registrations %}
+                    <a class="block rounded-xl border border-slate-200 px-3 py-2 hover:bg-slate-50" href="{{ url_for('main.event_detail', event_id=reg.event.id) }}">
+                      <div class="flex items-start justify-between gap-2">
+                        <p class="text-sm font-medium text-slate-800">{{ reg.event.title }}</p>
+                        {% if not reg.is_approved %}
+                          <span class="inline-flex rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-medium text-amber-700">Pending</span>
+                        {% endif %}
+                      </div>
+                      <p class="mt-1 text-[11px] text-slate-500">{{ reg.event.start_at.strftime('%d %b %Y') }}</p>
+                    </a>
+                  {% else %}
+                    <p class="text-xs text-slate-500">Belum ada event yang kamu ikuti.</p>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
           </aside>
         {% endif %}
         <main class="{% if show_sidebar %}px-6{% else %}px-2{% endif %}">

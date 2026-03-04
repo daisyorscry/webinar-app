@@ -1,46 +1,88 @@
 {% extends 'base.html' %}
 {% block content %}
   <div class="space-y-6">
-    <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
-      <div class="flex items-center justify-between gap-4">
-        <h2 class="text-xl font-semibold">Pendaftar Event: {{ event.title }}</h2>
-        <a class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_registrations_csv', event_id=event.id) }}">
+    <section class="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs uppercase tracking-[0.3em] text-teal-600">Registrations</p>
+        <h2 class="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Pendaftar Event</h2>
+        <p class="mt-2 text-sm text-slate-600">{{ event.title }}</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_events') }}">
+          <i class="fa-regular fa-calendar-days"></i>
+          Kembali ke Event
+        </a>
+        <a class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:text-slate-900" href="{{ url_for('main.admin_registrations_csv', event_id=event.id) }}">
           <i class="fa-solid fa-file-arrow-down"></i>
           Export CSV
         </a>
       </div>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900">Daftar Pendaftar</h3>
+          <p class="text-sm text-slate-500">Semua pendaftar untuk event ini.</p>
+        </div>
+      </div>
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">
-          <thead class="text-slate-600">
+          <thead class="bg-slate-50 text-slate-600">
             <tr>
-              <th class="text-left py-2">Nama</th>
-              <th class="text-left py-2">Email</th>
-              <th class="text-left py-2">Referral</th>
-              <th class="text-left py-2">Invited By</th>
-              <th class="text-left py-2">Certificate</th>
+              <th class="px-5 py-4 text-left font-semibold">Nama</th>
+              <th class="px-5 py-4 text-left font-semibold">Email</th>
+              <th class="px-5 py-4 text-left font-semibold">Status</th>
+              <th class="px-5 py-4 text-left font-semibold">Referral</th>
+              <th class="px-5 py-4 text-left font-semibold">Invited By</th>
+              <th class="px-5 py-4 text-left font-semibold">Certificate</th>
+              <th class="px-5 py-4 text-left font-semibold">Aksi</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-slate-200">
             {% for reg in registrations %}
-              <tr class="border-t border-slate-200">
-                <td class="py-2">{{ reg.participant.name }}</td>
-                <td class="py-2">{{ reg.participant.email }}</td>
-                <td class="py-2">{{ reg.referral_code }}</td>
-                <td class="py-2">{{ reg.invited_by.referral_code if reg.invited_by else '-' }}</td>
-                <td class="py-2">
+              <tr class="align-top">
+                <td class="px-5 py-4">
+                  <div class="space-y-1">
+                    <p class="font-semibold text-slate-900">{{ reg.participant.name }}</p>
+                    <p class="text-xs text-slate-500">ID {{ reg.participant.participant_id }}</p>
+                  </div>
+                </td>
+                <td class="px-5 py-4 text-slate-700">{{ reg.participant.email }}</td>
+                <td class="px-5 py-4">
+                  {% if reg.is_approved %}
+                    <span class="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-medium text-emerald-700">Approved</span>
+                  {% else %}
+                    <span class="inline-flex rounded-full bg-amber-50 border border-amber-200 px-3 py-1 text-xs font-medium text-amber-700">Pending</span>
+                  {% endif %}
+                </td>
+                <td class="px-5 py-4 text-slate-700">{{ reg.referral_code }}</td>
+                <td class="px-5 py-4 text-slate-700">{{ reg.invited_by.referral_code if reg.invited_by else '-' }}</td>
+                <td class="px-5 py-4 text-slate-700">
                   {% if reg.certificate %}
                     {{ reg.certificate.certificate_number }}
                   {% else %}
                     -
                   {% endif %}
                 </td>
+                <td class="px-5 py-4">
+                  {% if not reg.is_approved %}
+                    <form method="post" action="{{ url_for('main.admin_approve_registration', registration_id=reg.id) }}">
+                      <button class="bg-teal-700 hover:bg-teal-600 text-white font-semibold rounded-lg px-3 py-2 text-xs" type="submit">Approve</button>
+                    </form>
+                  {% else %}
+                    <span class="text-xs text-slate-500">Sudah di-approve</span>
+                  {% endif %}
+                </td>
               </tr>
             {% else %}
-              <tr><td class="py-2 text-slate-500" colspan="5">Belum ada pendaftar.</td></tr>
+              <tr>
+                <td class="px-5 py-10 text-center text-slate-500" colspan="7">Belum ada pendaftar.</td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   </div>
 {% endblock %}

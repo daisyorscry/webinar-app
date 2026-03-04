@@ -1,0 +1,411 @@
+{
+  "app": {
+    "name": "Webinar ITTS",
+    "type": "Flask web application",
+    "summary": "Aplikasi manajemen webinar dengan area user dan admin untuk registrasi event, approval pendaftar, referral, mentor, dan sertifikat."
+  },
+  "tech_stack": {
+    "backend": [
+      "Python 3",
+      "Flask 3",
+      "Flask-SQLAlchemy",
+      "Flask-Migrate",
+      "Authlib"
+    ],
+    "database": [
+      "PostgreSQL",
+      "SQLAlchemy ORM",
+      "Alembic migrations"
+    ],
+    "frontend": [
+      "Jinja2 templates",
+      "Tailwind CSS via CDN",
+      "Vanilla JavaScript",
+      "Flatpickr (date picker via CDN)",
+      "Font Awesome via CDN"
+    ],
+    "deployment_runtime": [
+      "Gunicorn",
+      "WSGI entrypoint: wsgi.py"
+    ],
+    "external_integrations": [
+      "GitHub OAuth login",
+      "SMTP email for approval notifications",
+      "Optional attendance API integration"
+    ]
+  },
+  "features": {
+    "user": [
+      "Register/login user",
+      "GitHub OAuth login",
+      "Email verification",
+      "Profile photo upload / OAuth avatar fallback",
+      "Browse event list",
+      "Request event registration",
+      "Pending approval status tracking",
+      "Approved event dashboard",
+      "Event history",
+      "Referral sharing",
+      "Password reset (user)"
+    ],
+    "admin": [
+      "Admin dashboard summary",
+      "Create/edit/delete event",
+      "Generate Google Meet-style link",
+      "Create mentor",
+      "View mentors list",
+      "Approve pending registrations",
+      "View event registrations",
+      "Export registrations CSV",
+      "Regenerate API token"
+    ],
+    "system_rules": [
+      "User must verify email before requesting event registration",
+      "User must have profile photo or OAuth avatar before requesting event registration",
+      "Registration enters pending state first",
+      "Only approved registrations count toward event quota",
+      "Certificate is created only after approval",
+      "Approved users receive email notification if SMTP is configured"
+    ]
+  },
+  "main_flows": {
+    "user_registration_flow": [
+      "User creates account or logs in with GitHub OAuth",
+      "User verifies email (OAuth user is auto-verified)",
+      "User completes profile photo requirement",
+      "User submits event registration request",
+      "System creates registration with status = pending",
+      "Admin approves request",
+      "System marks registration as approved, creates certificate, and sends approval email",
+      "User can access approved registration details, referral, and later event history"
+    ],
+    "admin_event_flow": [
+      "Admin creates mentor",
+      "Admin creates event and assigns mentor",
+      "Users submit registration requests",
+      "Admin reviews pending approvals",
+      "Admin approves participants",
+      "Admin monitors event registrations and exports CSV when needed"
+    ],
+    "event_visibility_flow": [
+      "Pending registrations show as pending in user-facing status areas",
+      "Approved ongoing/upcoming registrations appear in user dashboard and Event Saya",
+      "Approved finished events move to Event History",
+      "Finished events no longer appear in user event-active areas"
+    ]
+  },
+  "erd": {
+    "entities": [
+      {
+        "name": "admins",
+        "purpose": "Admin accounts for managing events and approvals",
+        "key_fields": ["id", "name", "email", "password_hash", "role", "api_token_hash"]
+      },
+      {
+        "name": "mentors",
+        "purpose": "Mentor profile shown on events",
+        "key_fields": ["id", "name", "bio", "photo_url"]
+      },
+      {
+        "name": "events",
+        "purpose": "Webinar/event records",
+        "key_fields": [
+          "id",
+          "title",
+          "description",
+          "start_at",
+          "end_at",
+          "registration_deadline",
+          "duration_minutes",
+          "quota",
+          "invitation_code",
+          "meet_link",
+          "mentor_id",
+          "admin_id"
+        ]
+      },
+      {
+        "name": "participants",
+        "purpose": "User accounts / webinar participants",
+        "key_fields": [
+          "id",
+          "participant_id",
+          "name",
+          "email",
+          "password_hash",
+          "github_id",
+          "github_username",
+          "avatar_url",
+          "profile_photo_path",
+          "email_verified"
+        ]
+      },
+      {
+        "name": "registrations",
+        "purpose": "Participant registration requests and approvals",
+        "key_fields": [
+          "id",
+          "participant_id",
+          "event_id",
+          "referral_code",
+          "invited_by_registration_id",
+          "status",
+          "approved_at",
+          "approved_by_admin_id",
+          "created_at"
+        ]
+      },
+      {
+        "name": "certificates",
+        "purpose": "Certificate record linked to approved registration",
+        "key_fields": ["id", "participant_id", "event_id", "registration_id", "certificate_number", "issued_at"]
+      },
+      {
+        "name": "graduation_status",
+        "purpose": "Optional pass/fail status for participant",
+        "key_fields": ["id", "participant_id", "passed", "reason", "evaluated_at"]
+      },
+      {
+        "name": "participant_reset_tokens",
+        "purpose": "Password reset tokens for participant accounts",
+        "key_fields": ["id", "participant_id", "token_hash", "expires_at", "used_at"]
+      },
+      {
+        "name": "admin_reset_tokens",
+        "purpose": "Legacy admin reset token table still exists in model/database layer",
+        "key_fields": ["id", "admin_id", "token_hash", "expires_at", "used_at"]
+      }
+    ],
+    "relationships": [
+      "admins 1..n events",
+      "mentors 1..n events",
+      "participants 1..n registrations",
+      "events 1..n registrations",
+      "registrations 1..1 certificates (logical, optional until approved)",
+      "registrations self-reference via invited_by_registration_id for referral source",
+      "admins 1..n registrations via approved_by_admin_id",
+      "participants 1..n participant_reset_tokens",
+      "admins 1..n admin_reset_tokens"
+    ]
+  },
+  "infrastructure": {
+    "configuration": {
+      "source": ".env loaded by python-dotenv",
+      "important_envs": [
+        "SECRET_KEY",
+        "DATABASE_URL",
+        "GITHUB_CLIENT_ID",
+        "GITHUB_CLIENT_SECRET",
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "SMTP_USERNAME",
+        "SMTP_PASSWORD",
+        "SMTP_USE_TLS",
+        "MAIL_FROM_EMAIL",
+        "MAIL_FROM_NAME",
+        "UPLOAD_FOLDER"
+      ]
+    },
+    "runtime_components": [
+      "Flask app factory in app/__init__.py",
+      "Blueprint-based route registration in app/routes.py",
+      "SQLAlchemy db + Flask-Migrate",
+      "Static file serving for uploaded profile photos in app/static/uploads",
+      "SMTP delivery through Python smtplib"
+    ],
+    "auth": [
+      "Session-based auth for admin and user",
+      "GitHub OAuth via Authlib"
+    ]
+  },
+  "how_to_run": {
+    "prerequisites": [
+      "Python environment installed",
+      "PostgreSQL running",
+      ".env configured"
+    ],
+    "install": [
+      "python3 -m venv .venv",
+      "source .venv/bin/activate",
+      "pip install -r requirements.txt"
+    ],
+    "database": [
+      "flask db upgrade"
+    ],
+    "run_dev": [
+      "export FLASK_APP=wsgi.py",
+      "flask run"
+    ],
+    "run_prod_like": [
+      "gunicorn wsgi:app"
+    ],
+    "notes": [
+      "If SMTP env is not configured, approval email sending will fail silently and approval still succeeds.",
+      "GitHub OAuth requires valid client ID and secret."
+    ]
+  },
+  "route_map": {
+    "public_pages": [
+      { "path": "/", "endpoint": "main.home", "purpose": "Landing page dan daftar event umum" },
+      { "path": "/events/<event_id>", "endpoint": "main.event_detail", "purpose": "Detail event dan form/request registrasi" },
+      { "path": "/registrations/<registration_id>", "endpoint": "main.registration_success", "purpose": "Status registrasi user (pending/approved)" },
+      { "path": "/invite/<code>", "endpoint": "main.invitation", "purpose": "Redirect referral ke detail event" }
+    ],
+    "auth_routes": [
+      { "path": "/user/register", "endpoint": "main.user_register", "purpose": "Registrasi akun user" },
+      { "path": "/user/login", "endpoint": "main.user_login", "purpose": "Login user/admin entrypoint" },
+      { "path": "/user/logout", "endpoint": "main.user_logout", "purpose": "Logout user" },
+      { "path": "/auth/github", "endpoint": "main.github_login", "purpose": "Mulai login GitHub OAuth" },
+      { "path": "/auth/github/callback", "endpoint": "main.github_callback", "purpose": "Callback GitHub OAuth" },
+      { "path": "/user/reset", "endpoint": "main.user_reset_request", "purpose": "Minta reset password user" },
+      { "path": "/user/reset/<token>", "endpoint": "main.user_reset_form", "purpose": "Set password baru user" },
+      { "path": "/user/verify/<token>", "endpoint": "main.user_verify_email", "purpose": "Verifikasi email user" }
+    ],
+    "user_pages": [
+      { "path": "/user/dashboard", "endpoint": "main.user_dashboard", "purpose": "Dashboard user: event aktif, pending, referral" },
+      { "path": "/user/events", "endpoint": "main.user_events", "purpose": "Daftar event untuk user + pending approval" },
+      { "path": "/user/history", "endpoint": "main.user_history", "purpose": "Riwayat event selesai yang sudah approved" },
+      { "path": "/user/profile", "endpoint": "main.user_profile", "purpose": "Profil user dan status verifikasi" },
+      { "path": "/user/profile/photo", "endpoint": "main.user_profile_photo", "purpose": "Upload foto profil user" },
+      { "path": "/events/<event_id>/register", "endpoint": "main.event_register", "purpose": "Submit request registrasi event" }
+    ],
+    "admin_pages": [
+      { "path": "/admin", "endpoint": "main.admin_dashboard", "purpose": "Dashboard admin" },
+      { "path": "/admin/events", "endpoint": "main.admin_events", "purpose": "List dan filter event admin" },
+      { "path": "/admin/events/new", "endpoint": "main.admin_create_event", "purpose": "Buat event" },
+      { "path": "/admin/events/<event_id>/edit", "endpoint": "main.admin_edit_event", "purpose": "Edit event" },
+      { "path": "/admin/events/<event_id>/delete", "endpoint": "main.admin_delete_event", "purpose": "Hapus event" },
+      { "path": "/admin/events/<event_id>/meet-generate", "endpoint": "main.admin_generate_meet", "purpose": "Generate link meeting event" },
+      { "path": "/admin/mentors", "endpoint": "main.admin_mentors", "purpose": "List mentor + search" },
+      { "path": "/admin/mentors/new", "endpoint": "main.admin_create_mentor", "purpose": "Tambah mentor" },
+      { "path": "/admin/approvals", "endpoint": "main.admin_approvals", "purpose": "Daftar approval registrasi pending" },
+      { "path": "/admin/events/<event_id>/registrations", "endpoint": "main.admin_event_registrations", "purpose": "Daftar pendaftar per event" },
+      { "path": "/admin/registrations/<registration_id>/approve", "endpoint": "main.admin_approve_registration", "purpose": "Approve registrasi pending" },
+      { "path": "/admin/events/<event_id>/registrations.csv", "endpoint": "main.admin_registrations_csv", "purpose": "Export CSV pendaftar per event" },
+      { "path": "/admin/token/regenerate", "endpoint": "main.admin_regenerate_token", "purpose": "Regenerate API token admin" },
+      { "path": "/admin/logout", "endpoint": "main.admin_logout", "purpose": "Logout admin" }
+    ]
+  },
+  "env_vars": [
+    {
+      "name": "SECRET_KEY",
+      "required": true,
+      "used_by": "Flask session and security",
+      "function": "Kunci rahasia untuk session cookie dan komponen keamanan Flask"
+    },
+    {
+      "name": "DATABASE_URL",
+      "required": true,
+      "used_by": "SQLAlchemy",
+      "function": "Connection string database PostgreSQL aplikasi"
+    },
+    {
+      "name": "ATTENDANCE_API_URL",
+      "required": false,
+      "used_by": "Attendance integration",
+      "function": "Base URL API attendance eksternal jika dipakai"
+    },
+    {
+      "name": "ATTENDANCE_API_KEY",
+      "required": false,
+      "used_by": "Attendance integration",
+      "function": "API key untuk akses layanan attendance eksternal"
+    },
+    {
+      "name": "USE_MOCK_API",
+      "required": false,
+      "used_by": "Attendance integration",
+      "function": "Toggle untuk memakai mock attendance flow daripada API real"
+    },
+    {
+      "name": "GITHUB_CLIENT_ID",
+      "required": false,
+      "used_by": "GitHub OAuth",
+      "function": "Client ID OAuth GitHub untuk login user"
+    },
+    {
+      "name": "GITHUB_CLIENT_SECRET",
+      "required": false,
+      "used_by": "GitHub OAuth",
+      "function": "Client secret OAuth GitHub untuk login user"
+    },
+    {
+      "name": "SMTP_HOST",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Host SMTP untuk kirim email approval registrasi"
+    },
+    {
+      "name": "SMTP_PORT",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Port SMTP, default 587"
+    },
+    {
+      "name": "SMTP_USERNAME",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Username akun SMTP untuk autentikasi"
+    },
+    {
+      "name": "SMTP_PASSWORD",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Password atau app password akun SMTP"
+    },
+    {
+      "name": "SMTP_USE_TLS",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Toggle apakah koneksi SMTP menggunakan STARTTLS"
+    },
+    {
+      "name": "MAIL_FROM_EMAIL",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Alamat pengirim email notifikasi"
+    },
+    {
+      "name": "MAIL_FROM_NAME",
+      "required": false,
+      "used_by": "SMTP email",
+      "function": "Nama display pengirim email notifikasi"
+    },
+    {
+      "name": "UPLOAD_FOLDER",
+      "required": false,
+      "used_by": "Profile photo uploads",
+      "function": "Lokasi penyimpanan file upload foto profil"
+    }
+  ],
+  "folder_structure": {
+    "root": [
+      "app/",
+      "migrations/",
+      ".env",
+      "requirements.txt",
+      "wsgi.py",
+      "app_overview.json"
+    ],
+    "app": {
+      "files": [
+        "__init__.py",
+        "config.py",
+        "extensions.py",
+        "models.py",
+        "routes.py",
+        "auth.py",
+        "security.py"
+      ],
+      "folders": {
+        "templates": "Jinja templates for user/admin UI",
+        "static": "JS, uploaded assets, and static files",
+        "services": "Service helpers such as email and attendance integration"
+      }
+    },
+    "migrations": {
+      "purpose": "Alembic migration scripts for schema changes",
+      "important_subfolder": "migrations/versions/"
+    }
+  }
+}
